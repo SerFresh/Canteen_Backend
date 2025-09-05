@@ -44,13 +44,8 @@
 // }
 
 const express = require("express");
-const connectDB = require("./db");
-const authRoutes = require("./routes/auth");
-
+const mongoose = require("mongoose");
 const app = express();
-app.use(express.json());
-
-connectDB();
 
 app.get("/", async (req, res) => {
   try {
@@ -67,6 +62,6 @@ app.get("/", async (req, res) => {
     res.status(500).send("MongoDB connection failed");
   }
 });
-app.use("/api", authRoutes);
 
 module.exports = app;
+
