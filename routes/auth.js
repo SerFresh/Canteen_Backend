@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const auth = require("../middleware/auth");
+
 const User = require("../models/User");
 
 // POST /register
@@ -82,5 +84,22 @@ router.post("/login", async (req, res) => {
   }
 });
 
+// GET /profile
+router.get("/profile", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select("-password"); // ไม่ส่ง password
+    if (!user) return res.status(404).json({ message: "ไม่พบผู้ใช้" });
+
+    res.json({
+      name: user.name,
+      nicname: user.nicname,
+      email: user.email,
+      imageProfile: user.imageProfile
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
 
 module.exports = router;
