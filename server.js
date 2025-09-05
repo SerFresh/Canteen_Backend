@@ -1,38 +1,34 @@
-// server.js
 require('dotenv').config();
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const serverless = require("serverless-http");
 
-const authRoutes = require('./routes/auth');
-const userRoutes = require('./routes/userprofile');
+const authRoutes = require("./routes/auth");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log("✅ MongoDB connected"))
-.catch(err => console.error("❌ Mongo Error:", err));
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch(err => console.error("❌ Mongo Error:", err));
 
 // Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/user', userRoutes);
+app.use("/api/auth", authRoutes);
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ message: 'Server is running!' });
-});
+app.get("/api/health", (req, res) => res.json({ message: "Server is running!" }));
 
-// Root route
-app.get('/', (req, res) => {
-  res.send('Backend is running! Visit /api/health for JSON.');
-});
+app.get("/", (req, res) => res.send("Backend is running!"));
 
-// Export serverless handler
+// ✅ ถ้ารันปกติด้วย node server.js
+if (process.env.NODE_ENV !== "serverless") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+}
+
+// ✅ export ไว้สำหรับ serverless (vercel, netlify)
 module.exports.handler = serverless(app);
