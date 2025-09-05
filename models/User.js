@@ -8,4 +8,4 @@ const UserSchema = new mongoose.Schema({
   imageProfile: { type: String, default: "" },
 }, { timestamps: true });
 
-module.exports = mongoose.model("User", UserSchema);
+module.exports = mongoose.model("User", UserSchema, "users"); 
