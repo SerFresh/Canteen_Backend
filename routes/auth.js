@@ -5,31 +5,26 @@ const User = require("../models/User");
 
 const router = express.Router();
 
-// POST /api/auth/register
+// ✅ Register (ที่ทำไปแล้ว)
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password, confirmPassword } = req.body;
 
-    // ตรวจสอบว่ากรอกครบ
     if (!name || !email || !password || !confirmPassword) {
       return res.status(400).json({ message: "กรอกข้อมูลไม่ครบ" });
     }
 
-    // รหัสผ่านต้องตรงกัน
     if (password !== confirmPassword) {
       return res.status(400).json({ message: "รหัสผ่านไม่ตรงกัน" });
     }
 
-    // ตรวจสอบอีเมลซ้ำ
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "อีเมลนี้ถูกใช้งานแล้ว" });
     }
 
-    // เข้ารหัส password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // สร้าง user ใหม่
     const newUser = new User({
       name,
       email,
@@ -39,10 +34,8 @@ router.post("/register", async (req, res) => {
     });
 
     await newUser.save();
-
     res.status(201).json({ message: "สมัครสมาชิกสำเร็จ", user: newUser });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: "เกิดข้อผิดพลาด", error: error.message });
   }
 });

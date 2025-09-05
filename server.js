@@ -1,25 +1,47 @@
+require('dotenv').config();
 const express = require("express");
-const connectDB = require("./db");
+const mongoose = require("mongoose");
+const cors = require("cors");
+const serverless = require("serverless-http");
+
+const authRoutes = require("./routes/auth");
+const userRoutes = require("./routes/userprofile");
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
-app.get("/", async (req, res) => {
+// MongoDB Connection
+const connectDB = async () => {
   try {
-    await connectDB(); // เชื่อม DB
-    res.send("Hello from Vercel API + MongoDB!");
+    if (mongoose.connections[0].readyState) return; // reuse connection
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true
+    });
+    console.log("✅ MongoDB connected");
   } catch (err) {
-    res.status(500).send("MongoDB connection failed");
+    console.error("❌ MongoDB Error:", err.message);
   }
-});
+};
 
-app.get("/ping", async (req, res) => {
-  try {
-    await connectDB();
-    res.json({ message: "pong" });
-  } catch (err) {
-    res.status(500).json({ message: "MongoDB connection failed" });
-  }
-});
+connectDB();
 
-module.exports = app;
+// Routes
+app.use("/api/auth", authRoutes);
+
+app.use("/api/user", userRoutes);
+
+app.get("/api/health", (req, res) => res.json({ message: "Server is running!" }));
+app.get("/", (req, res) => res.send("Backend is running!"));
+
+// 👉 ใช้กับ Vercel (Serverless)
+module.exports.handler = serverless(app);
+
+// 👉 ใช้ตอนรัน local
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on http://localhost:${PORT}`);
+  });
+}
