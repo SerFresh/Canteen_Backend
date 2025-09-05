@@ -1,20 +1,25 @@
-// server.js
 const express = require("express");
-const connectDB = require("./db"); // ไฟล์เชื่อม MongoDB
-const app = express();
+const connectDB = require("./db");
 
+const app = express();
 app.use(express.json());
 
-// connect MongoDB
-connectDB();
-
-app.get("/", (req, res) => {
-  res.send("Hello from Vercel API + MongoDB!");
+app.get("/", async (req, res) => {
+  try {
+    await connectDB(); // เชื่อม DB
+    res.send("Hello from Vercel API + MongoDB!");
+  } catch (err) {
+    res.status(500).send("MongoDB connection failed");
+  }
 });
 
-app.get("/ping", (req, res) => {
-  res.json({ message: "pong" });
+app.get("/ping", async (req, res) => {
+  try {
+    await connectDB();
+    res.json({ message: "pong" });
+  } catch (err) {
+    res.status(500).json({ message: "MongoDB connection failed" });
+  }
 });
 
-// Export app แทนการ listen()
 module.exports = app;
