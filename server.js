@@ -1,3 +1,4 @@
+// server.js
 require('dotenv').config();
 const express = require("express");
 const mongoose = require("mongoose");
@@ -22,10 +23,16 @@ mongoose.connect(process.env.MONGO_URI, {
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
-app.get('/api/health', (req, res) => res.json({ message: 'Server is running!' }));
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ message: 'Server is running!' });
+});
 
 // Root route
-app.get('/', (req, res) => res.send('Backend is running! Visit /api/health'));
+app.get('/', (req, res) => {
+  res.send('Backend is running! Visit /api/health for JSON.');
+});
 
 // Export serverless handler
 module.exports.handler = serverless(app);
