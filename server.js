@@ -5,7 +5,6 @@ const cors = require("cors");
 const serverless = require("serverless-http");
 
 const authRoutes = require("./routes/auth");
-const userRoutes = require("./routes/userprofile");
 
 const app = express();
 app.use(cors());
@@ -29,8 +28,6 @@ connectDB();
 
 // Routes
 app.use("/api/auth", authRoutes);
-
-app.use("/api/user", userRoutes);
 
 app.get("/api/health", (req, res) => res.json({ message: "Server is running!" }));
 app.get("/", (req, res) => res.send("Backend is running!"));
