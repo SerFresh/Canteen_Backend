@@ -44,7 +44,7 @@ router.post("/register", async (req, res) => {
     );
 
     // ✅ encodeURIComponent เพื่อป้องกันปัญหา URL
-    const verifyUrl = `https://my-api.vercel.app/api/auth/verify?token=${encodeURIComponent(verifyToken)}`;
+    const verifyUrl = `https://my-api.vercel.app/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
 
     // ✅ ส่งอีเมล
     await sendEmail(
@@ -100,7 +100,7 @@ router.post("/login", async (req, res) => {
 });
 
 // GET /verify-email
-router.get("/verify", async (req, res) => {
+router.get("/verify-email", async (req, res) => {
   try {
     const { token } = req.query;
 

@@ -30,5 +30,4 @@ app.use("/api/auth", authRoutes);
 
 // Export app แทนการ listen()
 module.exports = app;
-module.exports.handler = serverless(app);
 
