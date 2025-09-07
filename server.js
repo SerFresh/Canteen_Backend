@@ -1,7 +1,7 @@
 // server.js
 const express = require("express");
 const connectDB = require("./db"); // ไฟล์เชื่อม MongoDB
-
+const serverless = require("serverless-http");
 const User = require("./models/User");
 const authRoutes = require("./routes/auth");
 
@@ -30,4 +30,5 @@ app.use("/api/auth", authRoutes);
 
 // Export app แทนการ listen()
 module.exports = app;
+module.exports.handler = serverless(app);
 
