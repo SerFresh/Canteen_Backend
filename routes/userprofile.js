@@ -17,7 +17,7 @@ router.get("/profile", auth, async (req, res) => {
 
 // PUT /api/user/profile
 router.put("/profile", auth, async (req, res) => {
-  const { name, nicname, imageProfile } = req.body;
+  const { name, nickname, imageProfile } = req.body;
 
   try {
     const user = await User.findById(req.user.id);
@@ -25,7 +25,7 @@ router.put("/profile", auth, async (req, res) => {
 
     // อัปเดตเฉพาะฟิลด์ที่ส่งมา
     if (name !== undefined) user.name = name;
-    if (nicname !== undefined) user.nicname = nicname;
+    if (nickname !== undefined) user.nickname = nickname;
     if (imageProfile !== undefined) user.imageProfile = imageProfile;
 
     await user.save();
