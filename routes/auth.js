@@ -103,8 +103,17 @@ router.post("/login", async (req, res) => {
 router.get("/verify-email", async (req, res) => {
   try {
     const { token } = req.query;
-    if (!token) return res.status(400).json({ message: "ไม่มี token" });
 
+    // ถ้าไม่มี token → ใช้โหมด test
+    if (!token) {
+      console.log(">>> VERIFY-EMAIL TEST MODE (no token)");
+      return res.json({
+        message: "นี่คือ route verify-email แบบทดสอบ (ไม่มี token)",
+        query: req.query
+      });
+    }
+
+    // ถ้ามี token → ตรวจสอบตามปกติ
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     await User.findByIdAndUpdate(decoded.id, { verified: true });
@@ -115,6 +124,7 @@ router.get("/verify-email", async (req, res) => {
     res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
   }
 });
+
 
 // GET /profile
 router.get("/profile", auth, async (req, res) => {
