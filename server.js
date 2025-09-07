@@ -3,7 +3,9 @@ const express = require("express");
 const connectDB = require("./db"); // ไฟล์เชื่อม MongoDB
 const serverless = require("serverless-http");
 const User = require("./models/User");
+
 const authRoutes = require("./routes/auth");
+const userProfileRoutes = require("./routes/userprofile");
 
 const app = express();
 app.use(express.json());
@@ -27,6 +29,7 @@ app.get("/users", async (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userProfileRoutes);
 
 // Export app แทนการ listen()
 module.exports = app;

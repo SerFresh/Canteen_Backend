@@ -50,8 +50,8 @@ router.post("/register", async (req, res) => {
     await sendEmail(
       email,
       "ยืนยันการสมัครสมาชิก",
-      `<p>สวัสดี ${name},</p>
-       <p>กรุณาคลิกลิงก์ด้านล่างเพื่อยืนยันอีเมลของคุณ:</p>
+      `<p>⋆˙⟡ สวัสดี ${name}⋆˙⟡</p>
+       <p>กรุณาคลิกปุ่มก์ด้านล่างเพื่อยืนยันอีเมลของคุณ ⸜(｡˃ ᵕ ˂ )⸝♡</p>
        <a href="${verifyUrl}" 
        style="
          display:inline-block; 
@@ -65,7 +65,8 @@ router.post("/register", async (req, res) => {
          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
        ">
       ยืนยันอีเมล
-    </a>`
+    </a>
+    <p>♡ ขอให้มีความสุขกับการใช้งานบริการของเรา ♡</p>`
     );
 
     res.status(201).json({
@@ -126,25 +127,6 @@ router.get("/verify-email", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
-  }
-});
-
-
-// GET /profile
-router.get("/profile", auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select("-password");
-    if (!user) return res.status(404).json({ message: "ไม่พบผู้ใช้" });
-
-    res.json({
-      name: user.name,
-      nicname: user.nicname,
-      email: user.email,
-      imageProfile: user.imageProfile
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server Error" });
   }
 });
 
