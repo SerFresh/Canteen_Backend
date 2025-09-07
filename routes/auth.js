@@ -50,10 +50,46 @@ router.post("/register", async (req, res) => {
     await sendEmail(
       email,
       "ยืนยันการสมัครสมาชิก",
-      `<p>สวัสดี ${name},</p>
-       <p>กรุณาคลิกลิงก์ด้านล่างเพื่อยืนยันอีเมลของคุณ:</p>
-       <a href="${verifyUrl}">${verifyUrl}</a>`
+      `
+      <div style="font-family: Arial, sans-serif; background:#FFFFFF; padding:30px; text-align:center; border:1px solid #B3B3B3; border-radius:8px; max-width:600px; margin:auto;">
+        
+        <!-- Header -->
+        <h1 style="color:#FF8001; margin-bottom:10px;">ยินดีต้อนรับ ${name}!</h1>
+        <p style="color:#656565; font-size:16px;">กรุณาคลิกลิงก์ด้านล่างเพื่อยืนยันอีเมลของคุณ</p>
+
+        <!-- ปุ่มยืนยันอีเมล -->
+        <a href="${verifyUrl}" 
+          style="
+            display:inline-block; 
+            padding:12px 30px; 
+            margin:20px 0; 
+            background: linear-gradient(90deg, #FF8001, #FBC02D); 
+            color:white; 
+            text-decoration:none; 
+            font-weight:bold; 
+            border-radius:6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          ">
+          ยืนยันอีเมล
+        </a>
+
+        <!-- ข้อความประกอบ -->
+        <p style="color:#656565; font-size:14px; margin-top:20px;">
+          หากคุณไม่ได้สมัครสมาชิก โปรดละเว้นอีเมลนี้
+        </p>
+
+        <!-- เส้นแบ่ง -->
+        <hr style="border:none; border-top:1px solid #D9D9D9; margin:30px 0;">
+
+        <!-- Footer -->
+        <p style="color:#151515; font-size:12px;">
+          © 2025 YourCompany. สงวนลิขสิทธิ์
+        </p>
+
+      </div>
+      `
     );
+
 
     res.status(201).json({
       message: "สมัครสมาชิกสำเร็จ กรุณายืนยันอีเมลที่กล่องข้อความ",
