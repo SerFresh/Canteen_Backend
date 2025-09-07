@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcryptjs");
+const sendEmail = require("../utils/sendEmail");
 const jwt = require("jsonwebtoken");
 const auth = require("../middleware/auth");
 
@@ -11,40 +12,49 @@ router.post("/register", async (req, res) => {
   try {
     const { name, nicname, email, password, confirmPassword, imageProfile } = req.body;
 
-    // ตรวจสอบข้อมูลครบ
-    if (!name || !email || !password || !confirmPassword) {
+    if (!name || !email || !password || !confirmPassword)
       return res.status(400).json({ message: "กรอกข้อมูลไม่ครบ" });
-    }
 
-    // ตรวจสอบรหัสผ่านตรงกัน
-    if (password !== confirmPassword) {
+    if (password !== confirmPassword)
       return res.status(400).json({ message: "รหัสผ่านไม่ตรงกัน" });
-    }
 
-    // ตรวจสอบว่าผู้ใช้มีอยู่แล้ว
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "อีเมลนี้ถูกใช้งานแล้ว" });
-    }
+    if (existingUser) return res.status(400).json({ message: "อีเมลนี้ถูกใช้งานแล้ว" });
 
-    // เข้ารหัสรหัสผ่าน
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // สร้างผู้ใช้ใหม่
     const newUser = new User({
       name,
       nicname,
       email,
       password: hashedPassword,
-      imageProfile: imageProfile || ""
+      imageProfile: imageProfile || "",
+      verified: false
     });
 
     await newUser.save();
 
+    // ✅ สร้าง token สำหรับการยืนยันอีเมล
+    const verifyToken = jwt.sign(
+      { id: newUser._id },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    const verifyUrl = `https://my-api.vercel.app/api/auth/verify-email?token=${verifyToken}`;
+
+    // ✅ ส่งอีเมล
+    await sendEmail(
+      email,
+      "ยืนยันการสมัครสมาชิก",
+      `<p>สวัสดี ${name},</p>
+       <p>กรุณาคลิกลิงก์ด้านล่างเพื่อยืนยันอีเมลของคุณ:</p>
+       <a href="${verifyUrl}">${verifyUrl}</a>`
+    );
+
     res.status(201).json({
-      message: "สมัครสมาชิกสำเร็จ",
-      user: { name, nicname, email, imageProfile }
+      message: "สมัครสมาชิกสำเร็จ กรุณายืนยันอีเมลที่กล่องข้อความ",
     });
   } catch (err) {
     console.error(err);
@@ -83,6 +93,24 @@ router.post("/login", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+
+// GET /verify-email
+router.get("/verify-email", async (req, res) => {
+  try {
+    const { token } = req.query;
+    if (!token) return res.status(400).json({ message: "ไม่มี token" });
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    await User.findByIdAndUpdate(decoded.id, { verified: true });
+
+    res.json({ message: "ยืนยันอีเมลสำเร็จแล้ว" });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
+  }
+});
+
 
 // GET /profile
 router.get("/profile", auth, async (req, res) => {
