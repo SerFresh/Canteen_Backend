@@ -43,6 +43,7 @@ router.post("/register", async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    // ✅ encodeURIComponent เพื่อป้องกันปัญหา URL
     const verifyUrl = `https://my-api.vercel.app/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
 
     // ✅ ส่งอีเมล
@@ -74,6 +75,9 @@ router.post("/login", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "ผู้ใช้ไม่พบ" });
 
+    if (!user.verified)
+      return res.status(400).json({ message: "กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ" });
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "รหัสผ่านไม่ถูกต้อง" });
 
@@ -81,7 +85,7 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: user._id, email: user.email },
       process.env.JWT_SECRET,
-      { expiresIn: "7d" } // token หมดอายุ 7 วัน
+      { expiresIn: "7d" }
     );
 
     res.json({
@@ -112,11 +116,10 @@ router.get("/verify-email", async (req, res) => {
   }
 });
 
-
 // GET /profile
 router.get("/profile", auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password"); // ไม่ส่ง password
+    const user = await User.findById(req.user.id).select("-password");
     if (!user) return res.status(404).json({ message: "ไม่พบผู้ใช้" });
 
     res.json({
