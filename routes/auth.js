@@ -44,7 +44,7 @@ router.post("/register", async (req, res) => {
     );
 
     // ✅ encodeURIComponent เพื่อป้องกันปัญหา URL
-    const verifyUrl = `https://my-api.vercel.app/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
+    const verifyUrl = `https://my-api.vercel.app/api/auth/verify?token=${encodeURIComponent(verifyToken)}`;
 
     // ✅ ส่งอีเมล
     await sendEmail(
@@ -100,35 +100,30 @@ router.post("/login", async (req, res) => {
 });
 
 // GET /verify-email
-// router.get("/verify-email", async (req, res) => {
-//   try {
-//     const { token } = req.query;
+router.get("/verify", async (req, res) => {
+  try {
+    const { token } = req.query;
 
-//     // ถ้าไม่มี token → ใช้โหมด test
-//     if (!token) {
-//       console.log(">>> VERIFY-EMAIL TEST MODE (no token)");
-//       return res.json({
-//         message: "นี่คือ route verify-email แบบทดสอบ (ไม่มี token)",
-//         query: req.query
-//       });
-//     }
+    // ถ้าไม่มี token → ใช้โหมด test
+    if (!token) {
+      console.log(">>> VERIFY-EMAIL TEST MODE (no token)");
+      return res.json({
+        message: "นี่คือ route verify-email แบบทดสอบ (ไม่มี token)",
+        query: req.query
+      });
+    }
 
-//     // ถ้ามี token → ตรวจสอบตามปกติ
-//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // ถ้ามี token → ตรวจสอบตามปกติ
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-//     await User.findByIdAndUpdate(decoded.id, { verified: true });
+    await User.findByIdAndUpdate(decoded.id, { verified: true });
 
-//     res.json({ message: "ยืนยันอีเมลสำเร็จแล้ว" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
-//   }
-// });
-router.get("/verify-email", (req, res) => {
-  console.log(">>> VERIFY-EMAIL ROUTE HIT");
-  res.json({ ok: true });
+    res.json({ message: "ยืนยันอีเมลสำเร็จแล้ว" });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
+  }
 });
-
 
 
 // GET /profile
