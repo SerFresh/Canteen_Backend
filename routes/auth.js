@@ -101,9 +101,11 @@ router.post("/login", async (req, res) => {
 
 // GET /verify-email
 router.get("/verify-email", (req, res) => {
-  console.log(">>> VERIFY-EMAIL ROUTE HIT", req.query);
-  res.json({ ok: true, query: req.query });
+  res.json({
+    message: "นี่คือข้อความทดสอบของ verify-email route 😎"
+  });
 });
+
 
 
 // GET /profile
