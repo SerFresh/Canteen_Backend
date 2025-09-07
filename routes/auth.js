@@ -44,7 +44,7 @@ router.post("/register", async (req, res) => {
     );
 
     // ✅ encodeURIComponent เพื่อป้องกันปัญหา URL
-    const verifyUrl = `https://my-api.vercel.app/api/auth/verifyemail?token=${encodeURIComponent(verifyToken)}`;
+    const verifyUrl = `https://my-api.vercel.app/api/auth/verify-email?email=${encodeURIComponent(newUser.email)}`;
 
     // ✅ ส่งอีเมล
     await sendEmail(
@@ -99,29 +99,24 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// GET /verify-email
-router.get("/verifyemail", async (req, res) => {
+// GET /verify-email แบบไม่ใช้ token
+router.get("/verify-email", async (req, res) => {
   try {
-    const { token } = req.query;
+    const { email } = req.query; // ใช้ email แทน token
 
-    // ถ้าไม่มี token → ใช้โหมด test
-    if (!token) {
-      console.log(">>> VERIFY-EMAIL TEST MODE (no token)");
-      return res.json({
-        message: "นี่คือ route verify-email แบบทดสอบ (ไม่มี token)",
-        query: req.query
-      });
-    }
+    if (!email) return res.status(400).json({ message: "กรุณาส่ง email ใน query" });
 
-    // ถ้ามี token → ตรวจสอบตามปกติ
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "ไม่พบผู้ใช้" });
 
-    await User.findByIdAndUpdate(decoded.id, { verified: true });
+    // อัปเดต verified เป็น true
+    user.verified = true;
+    await user.save();
 
-    res.json({ message: "ยืนยันอีเมลสำเร็จแล้ว" });
+    res.json({ message: `ยืนยันอีเมล ${email} สำเร็จแล้ว` });
   } catch (err) {
     console.error(err);
-    res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
+    res.status(500).json({ message: "Server Error" });
   }
 });
 
