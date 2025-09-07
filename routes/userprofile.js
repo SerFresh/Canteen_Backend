@@ -7,7 +7,7 @@ const router = express.Router();
 // GET /api/user/profile (ต้องมี token)
 router.get("/profile", auth, async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("name nicname email imageProfile");
+    const user = await User.findById(req.user.id).select("name nickname email imageProfile");
     if (!user) return res.status(404).json({ message: "ไม่พบผู้ใช้" });
     res.json(user);
   } catch (error) {
@@ -33,7 +33,7 @@ router.put("/profile", auth, async (req, res) => {
     // ส่งข้อมูลกลับเฉพาะ 4 ฟิลด์
     res.json({
       name: user.name,
-      nicname: user.nicname,
+      nickname: user.nickname,
       email: user.email,
       imageProfile: user.imageProfile,
     });

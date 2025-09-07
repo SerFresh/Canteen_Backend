@@ -130,4 +130,72 @@ router.get("/verify-email", async (req, res) => {
   }
 });
 
+router.post("/forgot-password", async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "กรอกอีเมลด้วย" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "ไม่พบผู้ใช้" });
+
+    // สร้าง token แบบ JWT หรือ random string
+    const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
+    // บันทึกลง user
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 ชั่วโมง
+    await user.save();
+
+    const resetUrl = `https://canteen-backend-ten.vercel.app/reset-password?token=${encodeURIComponent(resetToken)}`;
+
+    await sendEmail(
+      email,
+      "รีเซ็ตรหัสผ่าน",
+      `<p>สวัสดี ${user.name}</p>
+       <p>คลิกที่ลิงก์ด้านล่างเพื่อตั้งรหัสผ่านใหม่:</p>
+       <a href="${resetUrl}">ตั้งรหัสผ่านใหม่</a>`
+    );
+
+    res.json({ message: "ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลเรียบร้อยแล้ว" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+router.post("/reset-password", async (req, res) => {
+  try {
+    const { token, password, confirmPassword } = req.body;
+    if (!token) return res.status(400).json({ message: "ไม่มี token" });
+    if (!password || !confirmPassword) return res.status(400).json({ message: "กรอกข้อมูลไม่ครบ" });
+    if (password !== confirmPassword) return res.status(400).json({ message: "รหัสผ่านไม่ตรงกัน" });
+
+    // ตรวจสอบ token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findOne({
+      _id: decoded.id,
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() }
+    });
+
+    if (!user) return res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
+
+    // Hash password ใหม่
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+
+    // ลบ token
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+
+    await user.save();
+
+    res.json({ message: "ตั้งรหัสผ่านใหม่สำเร็จแล้ว" });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
+  }
+});
+
+
 module.exports = router;
