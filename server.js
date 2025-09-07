@@ -1,5 +1,6 @@
 // server.js
 const express = require("express");
+const cors = require("cors"); 
 const connectDB = require("./db"); // ไฟล์เชื่อม MongoDB
 const serverless = require("serverless-http");
 const User = require("./models/User");
@@ -9,6 +10,16 @@ const userProfileRoutes = require("./routes/userprofile");
 
 const app = express();
 app.use(express.json());
+
+// CORS configuration
+// อนุญาตทุก origin (dev) หรือใส่เฉพาะ frontend URL ของคุณ
+app.use(
+  cors({
+    origin: ["http://localhost:5173"], // หรือ "*" ถ้าต้องการอนุญาตทุกที่
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true,
+  })
+);
 
 // connect MongoDB
 connectDB();
