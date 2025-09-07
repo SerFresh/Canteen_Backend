@@ -50,7 +50,7 @@ router.post("/register", async (req, res) => {
     await sendEmail(
       email,
       "ยืนยันการสมัครสมาชิก",
-      `<p>⋆˙⟡ สวัสดี ${name}⋆˙⟡</p>
+      `<p>⋆˙⟡ สวัสดี ${name} ⋆˙⟡</p>
        <p>กรุณาคลิกปุ่มก์ด้านล่างเพื่อยืนยันอีเมลของคุณ ⸜(｡˃ ᵕ ˂ )⸝♡</p>
        <a href="${verifyUrl}" 
        style="
@@ -153,7 +153,7 @@ router.post("/forgot-password", async (req, res) => {
       "รีเซ็ตรหัสผ่าน",
       `<p>⋆˙⟡ สวัสดี ${name} ⋆˙⟡</p>
        <p>คลิกที่ปุ่มด้านล่างเพื่อตั้งรหัสผ่านใหม่ ⸜(｡˃ ᵕ ˂ )⸝♡</p>
-       <a href="${verifyUrl}" 
+       <a href="${resetUrl}" 
        style="
          display:inline-block; 
          padding:12px 30px; 
