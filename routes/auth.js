@@ -140,7 +140,7 @@ router.get("/verify-email", async (req, res) => {
     if (!user) return res.status(400).send("ไม่พบผู้ใช้");
 
     // อัปเดตว่า verified แล้ว
-    user.isVerified = true;
+    user.verified = true;
     await user.save();
 
     // 🔑 ออก token สำหรับ login
