@@ -151,9 +151,23 @@ router.post("/forgot-password", async (req, res) => {
     await sendEmail(
       email,
       "รีเซ็ตรหัสผ่าน",
-      `<p>สวัสดี ${user.name}</p>
-       <p>คลิกที่ลิงก์ด้านล่างเพื่อตั้งรหัสผ่านใหม่:</p>
-       <a href="${resetUrl}">ตั้งรหัสผ่านใหม่</a>`
+      `<p>⋆˙⟡ สวัสดี ${name} ⋆˙⟡</p>
+       <p>คลิกที่ปุ่มด้านล่างเพื่อตั้งรหัสผ่านใหม่ ⸜(｡˃ ᵕ ˂ )⸝♡</p>
+       <a href="${verifyUrl}" 
+       style="
+         display:inline-block; 
+         padding:12px 30px; 
+         margin:20px 0; 
+         background: linear-gradient(90deg, #FF8001, #FBC02D); 
+         color:white; 
+         text-decoration:none; 
+         font-weight:bold; 
+         border-radius:6px;
+         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+       ">
+        ตั้งรหัสผ่านใหม่
+      </a>
+      <p>♡ อย่าลืมรหัสผ่านอีกน้า ♡</p>`
     );
 
     res.json({ message: "ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลเรียบร้อยแล้ว" });
