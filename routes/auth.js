@@ -43,8 +43,6 @@ router.post("/register", async (req, res) => {
       { expiresIn: "1d" }
     );
 
-    const loginToken = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "1h" });
-
     // ✅ encodeURIComponent เพื่อป้องกันปัญหา URL
     const verifyUrl = `https://canteen-backend-ten.vercel.app/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
 
