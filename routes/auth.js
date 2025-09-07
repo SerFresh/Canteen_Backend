@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+
 const bcrypt = require("bcryptjs");
 const sendEmail = require("../utils/sendEmail");
 const jwt = require("jsonwebtoken");
@@ -95,20 +96,24 @@ router.post("/login", async (req, res) => {
 });
 
 // GET /verify-email
-router.get("/verify-email", async (req, res) => {
-  try {
-    const { token } = req.query;
-    if (!token) return res.status(400).json({ message: "ไม่มี token" });
+// router.get("/verify-email", async (req, res) => {
+//   try {
+//     const { token } = req.query;
+//     if (!token) return res.status(400).json({ message: "ไม่มี token" });
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    await User.findByIdAndUpdate(decoded.id, { verified: true });
+//     await User.findByIdAndUpdate(decoded.id, { verified: true });
 
-    res.json({ message: "ยืนยันอีเมลสำเร็จแล้ว" });
-  } catch (err) {
-    console.error(err);
-    res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
-  }
+//     res.json({ message: "ยืนยันอีเมลสำเร็จแล้ว" });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
+//   }
+// });
+router.get("/verify-email", (req, res) => {
+  console.log("verify-email route hit", req.query);
+  res.json({ message: "Route working" });
 });
 
 
