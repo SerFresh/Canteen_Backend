@@ -43,6 +43,8 @@ router.post("/register", async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    const loginToken = jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "1h" });
+
     // ✅ encodeURIComponent เพื่อป้องกันปัญหา URL
     const verifyUrl = `https://canteen-backend-ten.vercel.app/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
 
@@ -114,21 +116,51 @@ router.post("/login", async (req, res) => {
 });
 
 // GET /verify-email
+// router.get("/verify-email", async (req, res) => {
+//   try {
+//     const { token } = req.query;
+//     if (!token) return res.status(400).json({ message: "ไม่มี token" });
+
+//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+//     await User.findByIdAndUpdate(decoded.id, { verified: true });
+
+//     res.json({ message: "ยืนยันอีเมลสำเร็จแล้ว" });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
+//   }
+// });
+// GET /api/auth/verify-email?token=xxxx
 router.get("/verify-email", async (req, res) => {
   try {
     const { token } = req.query;
-    if (!token) return res.status(400).json({ message: "ไม่มี token" });
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    await User.findByIdAndUpdate(decoded.id, { verified: true });
+    // หา user จาก id
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(400).send("ไม่พบผู้ใช้");
 
-    res.json({ message: "ยืนยันอีเมลสำเร็จแล้ว" });
+    // อัปเดตว่า verified แล้ว
+    user.isVerified = true;
+    await user.save();
+
+    // 🔑 ออก token สำหรับ login
+    const loginToken = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "7d" }
+    );
+
+    // ✅ redirect ไป frontend พร้อม token
+    return res.redirect(
+      `http://localhost:5173/login-success?token=${loginToken}`
+    );
   } catch (err) {
-    console.error(err);
-    res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
+    return res.status(400).send("ลิงก์ไม่ถูกต้องหรือหมดอายุ");
   }
 });
+
 
 router.post("/forgot-password", async (req, res) => {
   try {
