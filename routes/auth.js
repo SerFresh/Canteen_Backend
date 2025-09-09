@@ -168,7 +168,7 @@ router.post("/forgot-password", async (req, res) => {
     user.resetPasswordExpires = Date.now() + 3600000; // 1 ชั่วโมง
     await user.save();
 
-    const resetUrl = `https://canteen-backend-ten.vercel.app/api/auth/reset-password?token=${encodeURIComponent(resetToken)}`;
+    const resetUrl = `http://localhost:5173/reset-password?token=${encodeURIComponent(resetToken)}`;
 
     await sendEmail(
       email,
