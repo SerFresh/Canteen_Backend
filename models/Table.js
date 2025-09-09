@@ -7,6 +7,8 @@ const TableSchema = new mongoose.Schema({
   T_Status: { type: String, enum: ["Available", "Unavailable", "Reserved"], default: "Available" },
   TimeReserve: { type: Date },
   Reserver: { type: String },
+}, {
+  collection: "tables" // collection ชื่อ tables
 });
 
 module.exports = mongoose.model("Table", TableSchema);
