@@ -48,30 +48,30 @@ router.get("/:id", async (req, res) => {
   }
 });
 
-// ✅ Batch update or add tables
-// POST /canteen/:canteenId/tables/batch
-// Body: [{ number: 1, status: "Available" }, { number: 2, status: "Reserved" }]
 router.post("/:canteenId/tables/batch", async (req, res) => {
   try {
-    const tablesData = req.body; // array ของโต๊ะ
+    const tablesData = req.body; // คาดว่าเป็น array ของโต๊ะ
     const canteen = await Canteen.findById(req.params.canteenId);
     if (!canteen) return res.status(404).json({ message: "Canteen not found" });
 
     tablesData.forEach(tableData => {
-      const { number, status } = tableData;
+      const { number, status, reservedBy, reservedTime } = tableData;
 
-      // ตรวจสอบสถานะถูกต้องหรือไม่
       if (!["Available", "Unavailable", "Reserved"].includes(status)) return;
 
-      // หาโต๊ะที่มีหมายเลขนี้แล้ว
       const existingTable = canteen.Tables.find(t => t.number === number);
 
       if (existingTable) {
-        // อัปเดตสถานะ
         existingTable.status = status;
+        existingTable.reservedBy = reservedBy || "";
+        existingTable.reservedTime = reservedTime ? new Date(reservedTime) : null;
       } else {
-        // เพิ่มโต๊ะใหม่
-        canteen.Tables.push({ number, status });
+        canteen.Tables.push({
+          number,
+          status,
+          reservedBy: reservedBy || "",
+          reservedTime: reservedTime ? new Date(reservedTime) : null,
+        });
       }
     });
 
