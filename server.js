@@ -44,7 +44,6 @@ app.get("/users", async (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userProfileRoutes);
 app.use("/api/canteen", canteenRoutes); // เพิ่มตรงนี้
-app.use("/api/table", tableRoutes);     // เพิ่มตรงนี้
 
 // Export app แทนการ listen()
 module.exports = app;

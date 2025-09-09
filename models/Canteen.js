@@ -1,25 +1,16 @@
-// models/Canteen.js
 const mongoose = require("mongoose");
 
 const TableSchema = new mongoose.Schema({
   number: { type: Number, required: true },
-  status: { type: String, enum: ["Available", "Unavailable", "Reserved"], default: "Available" },
-  reservedBy: { type: String, default: "" },
-  reservedTime: { type: Date, default: null },
+  status: { type: String, enum: ["available", "unavailable", "reserved"], default: "available" },
+  reserver: { type: String, default: "" },
+  reservationTime: { type: Date, default: null }
 });
 
 const CanteenSchema = new mongoose.Schema({
-  C_name: { type: String, required: true }, // ชื่อโรงอาหาร
-  Capacity: { type: Number, required: true }, // จำนวนโต๊ะทั้งหมด
-  C_Status: { 
-    type: String, 
-    enum: ["High", "Medium", "Normal"], 
-    default: "Normal" 
-  },
-  Zone: [{ type: String }], // array ของโซน เช่น ["A","B","C"]
-  Tables: [TableSchema] // array ของโต๊ะแต่ละตัว
-}, {
-  collection: "canteens"
-});
+  name: { type: String, required: true },
+  zones: [{ type: String }],
+  tables: [TableSchema]
+}, { collection: "canteens" }); // กำหนดชื่อ collection
 
 module.exports = mongoose.model("Canteen", CanteenSchema);
