@@ -6,14 +6,14 @@ const Canteen = require("../models/Canteen");
 // POST /canteen
 router.post("/", async (req, res) => {
   try {
-    const { C_ID, C_name, Capacity, C_Status } = req.body;
+    const { C_name, Capacity, C_Status, Zone } = req.body;
 
     const newCanteen = new Canteen({
-      C_ID,
       C_name,
       Capacity,
-      Table: 0, // เริ่มต้นยังไม่มีโต๊ะ Unavailable
       C_Status,
+      Table: 0,
+      Zone: Zone || []   // ✅ เก็บ zone
     });
 
     await newCanteen.save();
