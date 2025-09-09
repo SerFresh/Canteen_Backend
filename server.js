@@ -7,12 +7,13 @@ const User = require("./models/User");
 
 const authRoutes = require("./routes/auth");
 const userProfileRoutes = require("./routes/userprofile");
+const canteenRoutes = require("./routes/canteen");
+const tableRoutes = require("./routes/table");
 
 const app = express();
 app.use(express.json());
 
 // CORS configuration
-// อนุญาตทุก origin (dev) หรือใส่เฉพาะ frontend URL ของคุณ
 app.use(
   cors({
     origin: ["http://localhost:5173"], // หรือ "*" ถ้าต้องการอนุญาตทุกที่
@@ -39,10 +40,12 @@ app.get("/users", async (req, res) => {
   }
 });
 
+// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userProfileRoutes);
+app.use("/api/canteen", canteenRoutes); // เพิ่มตรงนี้
+app.use("/api/table", tableRoutes);     // เพิ่มตรงนี้
 
 // Export app แทนการ listen()
 module.exports = app;
 module.exports.handler = serverless(app);
-

@@ -67,7 +67,7 @@ router.post("/register", async (req, res) => {
         <p>♡ ขอให้มีความสุขกับการใช้งานบริการของเรา ♡</p> `
       );
 
-    // ตั้ง timeout ลบ user ถ้ายังไม่ verified หลัง 1 นาที
+    // ตั้ง timeout ลบ user ถ้ายังไม่ verified หลัง 5 นาที
     setTimeout(async () => {
       const user = await User.findById(newUser._id);
       if (user && !user.verified) {
