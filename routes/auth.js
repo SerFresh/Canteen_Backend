@@ -27,7 +27,7 @@ router.post("/register", async (req, res) => {
 
     const newUser = new User({
       name,
-      nicname,
+      nickname,
       email,
       password: hashedPassword,
       imageProfile: imageProfile || "",
@@ -40,7 +40,7 @@ router.post("/register", async (req, res) => {
     const verifyToken = jwt.sign(
       { id: newUser._id },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "1m" }
     );
 
     // ✅ encodeURIComponent เพื่อป้องกันปัญหา URL
@@ -98,8 +98,7 @@ router.post("/login", async (req, res) => {
     // สร้าง JWT Token
     const token = jwt.sign(
       { id: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      process.env.JWT_SECRET
     );
 
     res.json({
@@ -113,22 +112,6 @@ router.post("/login", async (req, res) => {
   }
 });
 
-// GET /verify-email
-// router.get("/verify-email", async (req, res) => {
-//   try {
-//     const { token } = req.query;
-//     if (!token) return res.status(400).json({ message: "ไม่มี token" });
-
-//     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-//     await User.findByIdAndUpdate(decoded.id, { verified: true });
-
-//     res.json({ message: "ยืนยันอีเมลสำเร็จแล้ว" });
-//   } catch (err) {
-//     console.error(err);
-//     res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
-//   }
-// });
 // GET /api/auth/verify-email?token=xxxx
 router.get("/verify-email", async (req, res) => {
   try {
@@ -146,8 +129,7 @@ router.get("/verify-email", async (req, res) => {
     // 🔑 ออก token สำหรับ login
     const loginToken = jwt.sign(
       { id: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
+      process.env.JWT_SECRET
     );
 
     // ✅ redirect ไป frontend พร้อม token
@@ -159,7 +141,7 @@ router.get("/verify-email", async (req, res) => {
   }
 });
 
-
+// POST /api/auth/forgot-password
 router.post("/forgot-password", async (req, res) => {
   try {
     const { email } = req.body;
