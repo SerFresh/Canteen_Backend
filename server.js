@@ -8,7 +8,6 @@ const User = require("./models/User");
 const authRoutes = require("./routes/auth");
 const userProfileRoutes = require("./routes/userprofile");
 const canteenRoutes = require("./routes/canteen");
-const tableRoutes = require("./routes/table");
 
 const app = express();
 app.use(express.json());
