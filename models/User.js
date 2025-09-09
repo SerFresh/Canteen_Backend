@@ -15,7 +15,7 @@ const UserSchema = new mongoose.Schema({
 // ✅ TTL index: ลบ 5 นาทีหลังสร้างเฉพาะ user ที่ verified = false
 UserSchema.index(
   { createdAt: 1 },
-  { expireAfterSeconds: 300, partialFilterExpression: { verified: false } }
+  { expireAfterSeconds: 60, partialFilterExpression: { verified: false } }
 );
 
 module.exports = mongoose.model("User", UserSchema, "users");
