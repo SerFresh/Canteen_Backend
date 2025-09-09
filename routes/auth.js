@@ -11,7 +11,7 @@ const User = require("../models/User");
 // POST /register
 router.post("/register", async (req, res) => {
   try {
-    const { name, nicname, email, password, confirmPassword, imageProfile } = req.body;
+    const { name, nickname, email, password, confirmPassword, imageProfile } = req.body;
 
     if (!name || !email || !password || !confirmPassword)
       return res.status(400).json({ message: "กรอกข้อมูลไม่ครบ" });
