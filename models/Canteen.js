@@ -15,6 +15,6 @@ const ZoneSchema = new mongoose.Schema({
 const CanteenSchema = new mongoose.Schema({
   name: { type: String, required: true }, // ชื่อโรงอาหาร
   zones: [ZoneSchema] // โซนภายในโรงอาหาร
-});
+}, { collection: "canteens" }); // กำหนดชื่อ collection
 
 module.exports = mongoose.model("Canteen", CanteenSchema);
