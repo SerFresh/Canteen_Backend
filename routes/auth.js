@@ -47,23 +47,25 @@ router.post("/register", async (req, res) => {
 
     const verifyUrl = `https://canteen-backend-ten.vercel.app/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
 
-    // ส่งอีเมล
+    // ✅ ส่งอีเมล 
     await sendEmail(
-      email,
-      "ยืนยันการสมัครสมาชิก",
-      `<p>สวัสดี ${name}</p>
-       <p>กรุณาคลิกปุ่มด้านล่างเพื่อยืนยันอีเมลของคุณ</p>
-       <a href="${verifyUrl}" style="
-         display:inline-block; 
-         padding:12px 30px; 
-         margin:20px 0; 
-         background: linear-gradient(90deg, #FF8001, #FBC02D); 
-         color:white; 
-         text-decoration:none; 
-         font-weight:bold; 
-         border-radius:6px;
-       ">ยืนยันอีเมล</a>`
-    );
+       email, 
+       "ยืนยันการสมัครสมาชิก", 
+       `<p>⋆˙⟡ สวัสดี ${name}⋆˙⟡</p> 
+       <p>กรุณาคลิกปุ่มก์ด้านล่างเพื่อยืนยันอีเมลของคุณ ⸜(｡˃ ᵕ ˂ )⸝♡</p> 
+       <a href="${verifyUrl}" 
+       style="
+        display:inline-block; 
+        padding:12px 30px; 
+        margin:20px 0; background: 
+        linear-gradient(90deg, #FF8001, #FBC02D); 
+        color:white; text-decoration:none; 
+        font-weight:bold; border-radius:6px; 
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1); ">   
+        ยืนยันอีเมล 
+        </a> 
+        <p>♡ ขอให้มีความสุขกับการใช้งานบริการของเรา ♡</p> `
+      );
 
     // ตั้ง timeout ลบ user ถ้ายังไม่ verified หลัง 1 นาที
     setTimeout(async () => {
@@ -72,7 +74,7 @@ router.post("/register", async (req, res) => {
         await User.findByIdAndDelete(newUser._id);
         console.log(`User ${user.email} deleted due to expired verification token`);
       }
-    }, 60 * 1000); // 1 นาที
+    }, 300 * 1000); // 5 นาที
 
     // ส่ง response กลับ frontend พร้อม token
     res.status(201).json({
