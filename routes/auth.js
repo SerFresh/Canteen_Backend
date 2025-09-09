@@ -25,7 +25,7 @@ router.post("/register", async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // ✅ สร้าง user พร้อม createdAt
+    // สร้าง user ใหม่
     const newUser = new User({
       name,
       nickname,
@@ -33,28 +33,27 @@ router.post("/register", async (req, res) => {
       password: hashedPassword,
       imageProfile: imageProfile || "",
       verified: false,
-      createdAt: new Date() // ต้องมีเพื่อ TTL index
+      createdAt: new Date()
     });
 
     await newUser.save();
 
-    // ✅ สร้าง token สำหรับการยืนยันอีเมล
+    // สร้าง token 1 นาที
     const verifyToken = jwt.sign(
       { id: newUser._id },
       process.env.JWT_SECRET,
-      { expiresIn: "1m" } // token หมดอายุ 1 นาที
+      { expiresIn: "1m" }
     );
 
     const verifyUrl = `https://canteen-backend-ten.vercel.app/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
 
-    // ✅ ส่งอีเมล
+    // ส่งอีเมล
     await sendEmail(
       email,
       "ยืนยันการสมัครสมาชิก",
-      `<p>⋆˙⟡ สวัสดี ${name}⋆˙⟡</p>
-       <p>กรุณาคลิกปุ่มด้านล่างเพื่อยืนยันอีเมลของคุณ ⸜(｡˃ ᵕ ˂ )⸝♡</p>
-       <a href="${verifyUrl}" 
-       style="
+      `<p>สวัสดี ${name}</p>
+       <p>กรุณาคลิกปุ่มด้านล่างเพื่อยืนยันอีเมลของคุณ</p>
+       <a href="${verifyUrl}" style="
          display:inline-block; 
          padding:12px 30px; 
          margin:20px 0; 
@@ -63,23 +62,29 @@ router.post("/register", async (req, res) => {
          text-decoration:none; 
          font-weight:bold; 
          border-radius:6px;
-         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-       ">
-      ยืนยันอีเมล
-    </a>
-    <p>♡ ขอให้มีความสุขกับการใช้งานบริการของเรา ♡</p>`
+       ">ยืนยันอีเมล</a>`
     );
 
+    // ตั้ง timeout ลบ user ถ้ายังไม่ verified หลัง 1 นาที
+    setTimeout(async () => {
+      const user = await User.findById(newUser._id);
+      if (user && !user.verified) {
+        await User.findByIdAndDelete(newUser._id);
+        console.log(`User ${user.email} deleted due to expired verification token`);
+      }
+    }, 60 * 1000); // 1 นาที
+
+    // ส่ง response กลับ frontend พร้อม token
     res.status(201).json({
       message: "สมัครสมาชิกสำเร็จ กรุณายืนยันอีเมลที่กล่องข้อความ",
-      token: verifyToken // ✅ ส่ง token กลับไป frontend เพื่อ popup
+      token: verifyToken
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server Error" });
   }
 });
-
 
 // POST /login
 router.post("/login", async (req, res) => {
