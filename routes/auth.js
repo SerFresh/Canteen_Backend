@@ -233,5 +233,37 @@ router.post("/reset-password", async (req, res) => {
   }
 });
 
+// POST /api/auth/change-password
+router.post("/change-password", auth, async (req, res) => {
+  try {
+    const { oldPassword, newPassword, confirmNewPassword } = req.body;
+
+    if (!oldPassword || !newPassword || !confirmNewPassword)
+      return res.status(400).json({ message: "กรอกข้อมูลไม่ครบ" });
+
+    if (newPassword !== confirmNewPassword)
+      return res.status(400).json({ message: "รหัสผ่านใหม่ไม่ตรงกัน" });
+
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ message: "ผู้ใช้ไม่พบ" });
+
+    // ตรวจสอบรหัสเก่า
+    const isMatch = await bcrypt.compare(oldPassword, user.password);
+    if (!isMatch) return res.status(400).json({ message: "รหัสเก่าไม่ถูกต้อง" });
+
+    // Hash รหัสใหม่
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, salt);
+
+    await user.save();
+
+    res.json({ message: "เปลี่ยนรหัสผ่านสำเร็จ" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+
 
 module.exports = router;
