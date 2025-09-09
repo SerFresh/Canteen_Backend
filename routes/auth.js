@@ -25,13 +25,15 @@ router.post("/register", async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
+    // ✅ สร้าง user พร้อม createdAt
     const newUser = new User({
       name,
       nickname,
       email,
       password: hashedPassword,
       imageProfile: imageProfile || "",
-      verified: false
+      verified: false,
+      createdAt: new Date() // ต้องมีเพื่อ TTL index
     });
 
     await newUser.save();
@@ -40,10 +42,9 @@ router.post("/register", async (req, res) => {
     const verifyToken = jwt.sign(
       { id: newUser._id },
       process.env.JWT_SECRET,
-      { expiresIn: "1m" }
+      { expiresIn: "1m" } // token หมดอายุ 1 นาที
     );
 
-    // ✅ encodeURIComponent เพื่อป้องกันปัญหา URL
     const verifyUrl = `https://canteen-backend-ten.vercel.app/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
 
     // ✅ ส่งอีเมล
@@ -51,7 +52,7 @@ router.post("/register", async (req, res) => {
       email,
       "ยืนยันการสมัครสมาชิก",
       `<p>⋆˙⟡ สวัสดี ${name}⋆˙⟡</p>
-       <p>กรุณาคลิกปุ่มก์ด้านล่างเพื่อยืนยันอีเมลของคุณ ⸜(｡˃ ᵕ ˂ )⸝♡</p>
+       <p>กรุณาคลิกปุ่มด้านล่างเพื่อยืนยันอีเมลของคุณ ⸜(｡˃ ᵕ ˂ )⸝♡</p>
        <a href="${verifyUrl}" 
        style="
          display:inline-block; 
@@ -71,12 +72,14 @@ router.post("/register", async (req, res) => {
 
     res.status(201).json({
       message: "สมัครสมาชิกสำเร็จ กรุณายืนยันอีเมลที่กล่องข้อความ",
+      token: verifyToken // ✅ ส่ง token กลับไป frontend เพื่อ popup
     });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 
 // POST /login
 router.post("/login", async (req, res) => {
