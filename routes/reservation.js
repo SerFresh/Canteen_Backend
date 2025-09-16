@@ -1,122 +1,24 @@
-const express = require("express");
-const Reservation = require("../models/Reservation");
-const Table = require("../models/Table");
-const isAuthenticated = require("../middleware/auth"); // middleware ตรวจสอบ login
-const router = express.Router();
+const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-/* ---------- CREATE RESERVATION ---------- */
-router.post("/", isAuthenticated, async (req, res) => {
+const isAuthenticated = async (req, res, next) => {
   try {
-    const { tableID, duration_minutes } = req.body;
-    const userID = req.user._id; // เอาจาก token
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return res.status(401).json({ message: "No token provided" });
 
-    const table = await Table.findById(tableID);
-    if (!table) return res.status(404).json({ message: "Table not found" });
-    if (table.status !== "Available") return res.status(400).json({ message: "Table is not available" });
+    const token = authHeader.split(" ")[1];
+    if (!token) return res.status(401).json({ message: "No token provided" });
 
-    const reservation = await Reservation.create({
-      tableID,
-      userID,               // <-- ต้องเอาจาก token
-      duration_minutes,
-      status: "pending"
-      // reserved_at และ qr_code_token จะสร้างอัตโนมัติ
-    });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(401).json({ message: "User not found" });
 
-    table.status = "Reserved";
-    await table.save();
-
-    res.status(201).json({ message: "Reservation created", reservation });
+    req.user = user; // ✅ ต้องมีตรงนี้
+    next();
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(401).json({ message: "Unauthorized", error: err.message });
   }
-});
+};
 
-
-/* ---------- GET USER RESERVATIONS ---------- */
-router.get("/my", isAuthenticated, async (req, res) => {
-  try {
-    const reservations = await Reservation.find({ userID: req.user._id })
-      .populate("tableID")
-      .sort({ reserved_at: -1 });
-    res.json(reservations);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* ---------- GET ALL RESERVATIONS (ADMIN) ---------- */
-router.get("/", isAuthenticated, async (req, res) => {
-  try {
-    const reservations = await Reservation.find()
-      .populate("tableID userID")
-      .sort({ reserved_at: -1 });
-    res.json(reservations);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* ---------- CHECK-IN ---------- */
-router.put("/:reservationId/checkin", isAuthenticated, async (req, res) => {
-  try {
-    const reservation = await Reservation.findById(req.params.reservationId);
-    if (!reservation) return res.status(404).json({ message: "Reservation not found" });
-    if (reservation.status !== "pending") return res.status(400).json({ message: "Reservation cannot be checked in" });
-
-    reservation.status = "confirmed";
-    reservation.checkin_at = new Date();
-    await reservation.save();
-
-    const table = await Table.findById(reservation.tableID);
-    table.status = "Unavailable";
-    await table.save();
-
-    res.json({ message: "Check-in confirmed", reservation });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* ---------- CANCEL ---------- */
-router.put("/:reservationId/cancel", isAuthenticated, async (req, res) => {
-  try {
-    const reservation = await Reservation.findById(req.params.reservationId);
-    if (!reservation) return res.status(404).json({ message: "Reservation not found" });
-    if (reservation.status !== "pending") return res.status(400).json({ message: "Cannot cancel" });
-
-    reservation.status = "cancelled";
-    await reservation.save();
-
-    const table = await Table.findById(reservation.tableID);
-    table.status = "Available";
-    await table.save();
-
-    res.json({ message: "Reservation cancelled", reservation });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-/* ---------- EXPIRE RESERVATION (CRON / TIMER) ---------- */
-router.put("/expire/:qr_code_token", async (req, res) => {
-  try {
-    const reservation = await Reservation.findOne({ qr_code_token: req.params.qr_code_token });
-    if (!reservation) return res.status(404).json({ message: "Reservation not found" });
-    if (reservation.status !== "pending") return res.status(400).json({ message: "Cannot expire" });
-
-    // ตรวจสอบเวลาหมดอายุ
-    const expireTime = new Date(reservation.reserved_at.getTime() + reservation.duration_minutes*60000);
-    if (new Date() < expireTime) return res.status(400).json({ message: "Reservation is not expired yet" });
-
-    reservation.status = "expired";
-    await reservation.save();
-
-    const table = await Table.findById(reservation.tableID);
-    table.status = "Available";
-    await table.save();
-
-    res.json({ message: "Reservation expired", reservation });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-module.exports = router;
+// Export function เดียว
+module.exports = isAuthenticated;
