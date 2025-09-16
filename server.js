@@ -1,9 +1,8 @@
 // server.js
 const express = require("express");
 const cors = require("cors"); 
-const connectDB = require("./db"); // ไฟล์เชื่อม MongoDB
+const connectDB = require("./db"); 
 const serverless = require("serverless-http");
-const User = require("./models/User");
 
 const authRoutes = require("./routes/auth");
 const userProfileRoutes = require("./routes/userprofile");
@@ -12,26 +11,32 @@ const canteenRoutes = require("./routes/canteen");
 const app = express();
 app.use(express.json());
 
-// CORS configuration
+// CORS
 app.use(
   cors({
-    origin: ["http://localhost:5173"], // หรือ "*" ถ้าต้องการอนุญาตทุกที่
+    origin: ["http://localhost:5173"],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
   })
 );
 
-// connect MongoDB
-connectDB();
+// Connect MongoDB
+(async () => {
+  try {
+    await connectDB();
+    console.log("MongoDB connected");
+  } catch (err) {
+    console.error("MongoDB connection error:", err);
+  }
+})();
 
-app.get("/", (req, res) => {
-  res.send("Hello from Vercel API + MongoDB!");
-});
+// Routes
+app.get("/", (req, res) => res.send("Hello from Vercel API + MongoDB!"));
 
-// ทดลองดึง user ทั้งหมดจาก mongodb atlas
 app.get("/users", async (req, res) => {
   try {
-    const users = await User.find(); // ดึงข้อมูลทั้งหมด
+    const User = require("./models/User");
+    const users = await User.find();
     res.json(users);
   } catch (err) {
     console.error(err);
@@ -39,11 +44,10 @@ app.get("/users", async (req, res) => {
   }
 });
 
-// API routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userProfileRoutes);
-app.use("/api/canteen", canteenRoutes); // เพิ่มตรงนี้
+app.use("/api/canteen", canteenRoutes);
 
-// Export app แทนการ listen()
+// Export app สำหรับ serverless
 module.exports = app;
 module.exports.handler = serverless(app);
