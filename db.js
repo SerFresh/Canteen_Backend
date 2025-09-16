@@ -1,15 +1,23 @@
 // db.js
 const mongoose = require("mongoose");
 
-const connectDB = async () => {
-  if (mongoose.connections[0].readyState) return; // ใช้ connection เดิมถ้ามี
-  try {
-    await mongoose.connect(process.env.MONGO_URI); // ไม่ต้องใส่ useNewUrlParser
-    console.log("MongoDB connected");
-  } catch (err) {
-    console.error("MongoDB connection error:", err);
-    throw err;
+let cached = global.mongoose;
+if (!cached) cached = global.mongoose = { conn: null, promise: null };
+
+async function connectDB() {
+  if (cached.conn) {
+    return cached.conn; // ใช้ connection เก่า
   }
-};
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(process.env.MONGO_URI)
+      .then((mongoose) => {
+        return mongoose;
+      });
+  }
+
+  cached.conn = await cached.promise;
+  return cached.conn;
+}
 
 module.exports = connectDB;

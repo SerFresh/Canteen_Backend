@@ -13,8 +13,10 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: ["http://localhost:5173"], credentials: true }));
 
-// Connect MongoDB (await ก่อนใช้ router)
-connectDB().catch(err => console.error(err));
+// Connect MongoDB ก่อน router
+connectDB()
+  .then(() => console.log("MongoDB connected"))
+  .catch(err => console.error("MongoDB connection error:", err));
 
 // Routes
 app.get("/", (req, res) => res.send("Hello from Vercel API + MongoDB!"));
