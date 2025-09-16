@@ -1,7 +1,7 @@
 const express = require("express");
 const Reservation = require("../models/Reservation");
 const Table = require("../models/Table");
-const { isAuthenticated } = require("../middleware/auth"); // middleware ตรวจสอบ login
+const isAuthenticated = require("../middleware/auth"); // middleware ตรวจสอบ login
 const router = express.Router();
 
 /* ---------- CREATE RESERVATION ---------- */
