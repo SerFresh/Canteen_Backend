@@ -26,6 +26,8 @@ app.use("/api/user", userProfileRoutes);
 app.use("/api/canteen", canteenRoutes);
 app.use("/api/reservation", reservationRoutes);
 
+require("./jobs/expireReservations");
+
 // Export serverless handler
 module.exports = app;
 module.exports.handler = serverless(app);

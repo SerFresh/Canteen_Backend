@@ -19,7 +19,8 @@ router.post("/", isAuthenticated, async (req, res) => {
     const reservation = await Reservation.create({
       tableID,
       userID,
-      duration_minutes
+      duration_minutes,
+      reserved_at: new Date()
     });
 
     table.status = "Reserved";
