@@ -1,7 +1,7 @@
-import express from "express";
-import Canteen from "../models/Canteen.js";
-import Zone from "../models/Zone.js";
-import Table from "../models/Table.js";
+const express = require("express");
+const Canteen = require("../models/Canteen.js");
+const Zone = require("../models/Zone.js");
+const Table = require("../models/Table.js");
 
 const router = express.Router();
 
