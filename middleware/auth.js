@@ -1,23 +1,15 @@
 const jwt = require("jsonwebtoken");
-const User = require("../models/User");
 
-const isAuthenticated = async (req, res, next) => {
+module.exports = function (req, res, next) {
+  // ดึง token จาก Header
+  const token = req.header("Authorization")?.replace("Bearer ", "");
+  if (!token) return res.status(401).json({ message: "ไม่มี token" });
+
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ message: "No token provided" });
-
-    const token = authHeader.split(" ")[1];
-    if (!token) return res.status(401).json({ message: "No token provided" });
-
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    if (!user) return res.status(401).json({ message: "User not found" });
-
-    req.user = user; // ✅ ต้องมีตรงนี้
+    req.user = decoded; // เก็บข้อมูลผู้ใช้จาก token ไว้ใน req.user
     next();
   } catch (err) {
-    res.status(401).json({ message: "Unauthorized", error: err.message });
+    res.status(401).json({ message: "Token ไม่ถูกต้อง" });
   }
 };
-
-module.exports = isAuthenticated;
