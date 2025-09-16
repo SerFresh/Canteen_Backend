@@ -7,8 +7,8 @@ const router = express.Router();
 /* ---------- CREATE RESERVATION ---------- */
 router.post("/", isAuthenticated, async (req, res) => {
   try {
-    const { tableID, reserved_at, duration_minutes } = req.body;
-    const userID = req.user._id;
+    const { tableID, duration_minutes } = req.body;
+    const userID = req.user._id; // เอาจาก token
 
     const table = await Table.findById(tableID);
     if (!table) return res.status(404).json({ message: "Table not found" });
@@ -16,13 +16,12 @@ router.post("/", isAuthenticated, async (req, res) => {
 
     const reservation = await Reservation.create({
       tableID,
-      userID,
-      reserved_at,
+      userID,               // <-- ต้องเอาจาก token
       duration_minutes,
       status: "pending"
+      // reserved_at และ qr_code_token จะสร้างอัตโนมัติ
     });
 
-    // อัปเดตสถานะโต๊ะเป็น Reserved
     table.status = "Reserved";
     await table.save();
 
@@ -31,6 +30,7 @@ router.post("/", isAuthenticated, async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 /* ---------- GET USER RESERVATIONS ---------- */
 router.get("/my", isAuthenticated, async (req, res) => {
