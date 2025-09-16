@@ -1,53 +1,27 @@
-// server.js
 const express = require("express");
-const cors = require("cors"); 
-const connectDB = require("./db"); 
+const cors = require("cors");
 const serverless = require("serverless-http");
+const connectDB = require("./db");
 
-const authRoutes = require("./routes/auth");
-const userProfileRoutes = require("./routes/userprofile");
+const authRoutes = require("./routes/auth"); // มีอยู่แล้ว
+const userProfileRoutes = require("./routes/userprofile"); // มีอยู่แล้ว
 const canteenRoutes = require("./routes/canteen");
 
 const app = express();
+
+// Middleware
 app.use(express.json());
+app.use(cors({ origin: ["http://localhost:5173"], credentials: true }));
 
-// CORS
-app.use(
-  cors({
-    origin: ["http://localhost:5173"],
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true,
-  })
-);
-
-// Connect MongoDB
-(async () => {
-  try {
-    await connectDB();
-    console.log("MongoDB connected");
-  } catch (err) {
-    console.error("MongoDB connection error:", err);
-  }
-})();
+// Connect MongoDB (await ก่อนใช้ router)
+connectDB().catch(err => console.error(err));
 
 // Routes
 app.get("/", (req, res) => res.send("Hello from Vercel API + MongoDB!"));
-
-app.get("/users", async (req, res) => {
-  try {
-    const User = require("./models/User");
-    const users = await User.find();
-    res.json(users);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server Error" });
-  }
-});
-
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userProfileRoutes);
 app.use("/api/canteen", canteenRoutes);
 
-// Export app สำหรับ serverless
+// Export serverless handler
 module.exports = app;
 module.exports.handler = serverless(app);

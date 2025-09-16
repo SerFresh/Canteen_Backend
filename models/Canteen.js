@@ -6,9 +6,9 @@ const canteenSchema = new mongoose.Schema(
     location: { type: String, required: true }
   },
   {
-    collection: "canteens",   // 👈 ชื่อ collection ใน MongoDB Atlas
+    collection: "canteens",
     timestamps: true
   }
 );
 
-export default mongoose.model("Canteen", canteenSchema);
+module.exports = mongoose.model("Canteen", canteenSchema);
