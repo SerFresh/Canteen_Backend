@@ -7,6 +7,7 @@ const authRoutes = require("./routes/auth"); // มีอยู่แล้ว
 const userProfileRoutes = require("./routes/userprofile"); // มีอยู่แล้ว
 const canteenRoutes = require("./routes/canteen");
 const reservationRoutes = require("./routes/reservation");
+const tablesRoutes = require("./routes/table");
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/user", userProfileRoutes);
 app.use("/api/canteen", canteenRoutes);
 app.use("/api/reservation", reservationRoutes);
+app.use("/api/tables", tablesRoutes);
 
 // Export serverless handler
 module.exports = app;

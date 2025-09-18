@@ -73,29 +73,6 @@ router.put("/:reservationId/cancel", isAuthenticated, async (req, res) => {
   }
 });
 
-/* ---------- EXPIRE ---------- */
-router.put("/expire/:qr_code_token", async (req, res) => {
-  try {
-    const reservation = await Reservation.findOne({ qr_code_token: req.params.qr_code_token });
-    if (!reservation) return res.status(404).json({ message: "Reservation not found" });
-    if (reservation.status !== "pending") return res.status(400).json({ message: "Cannot expire" });
-
-    const expireTime = new Date(reservation.reserved_at.getTime() + reservation.duration_minutes * 60000);
-    if (new Date() < expireTime) return res.status(400).json({ message: "Reservation not expired yet" });
-
-    reservation.status = "expired";
-    await reservation.save();
-
-    const table = await Table.findById(reservation.tableID);
-    table.status = "Available";
-    await table.save();
-
-    res.json({ message: "Reservation expired", reservation });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 /* ---------- GET USER RESERVATIONS ---------- */
 router.get("/my", isAuthenticated, async (req, res) => {
   try {
