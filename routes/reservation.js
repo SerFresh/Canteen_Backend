@@ -61,12 +61,33 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
       return res.json({ message: "Check-in confirmed", reservation });
     }
 
-    // โต๊ะ Available หรือ Unavailable → แจ้งว่าโต๊ะยังไม่พร้อม
+    // โต๊ะ Available หรือ Unavailable → เปลี่ยนเป็น Unavailable
     if (table.status === "Available" || table.status === "Unavailable") {
-      return res.status(400).json({ message: "Table is currently unavailable" });
+      table.status = "Unavailable"; // บล็อกโต๊ะ
+      await table.save();
+      return res.json({ message: "Table is now marked as unavailable until cancelled" });
     }
 
     res.status(400).json({ message: "Cannot check-in" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.put("/:tableId/unblock", isAuthenticated, async (req, res) => {
+  try {
+    const table = await Table.findById(req.params.tableId);
+    if (!table) return res.status(404).json({ message: "Table not found" });
+
+    // เปลี่ยนโต๊ะกลับเป็น Available เฉพาะกรณีที่โต๊ะถูกบล็อก
+    if (table.status === "Unavailable") {
+      table.status = "Available";
+      await table.save();
+      return res.json({ message: "Table is now available", table });
+    }
+
+    // ถ้าโต๊ะไม่ใช่ Unavailable → ไม่มีอะไรต้องทำ
+    res.status(400).json({ message: "Table is not blocked" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
