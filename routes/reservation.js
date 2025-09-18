@@ -33,21 +33,40 @@ router.post("/", isAuthenticated, async (req, res) => {
 });
 
 /* ---------- CHECK-IN ---------- */
-router.put("/:reservationId/checkin", isAuthenticated, async (req, res) => {
+router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
   try {
-    const reservation = await Reservation.findById(req.params.reservationId);
-    if (!reservation) return res.status(404).json({ message: "Reservation not found" });
-    if (reservation.status !== "pending") return res.status(400).json({ message: "Cannot check-in" });
+    const table = await Table.findById(req.params.tableId);
+    if (!table) return res.status(404).json({ message: "Table not found" });
 
-    reservation.status = "confirmed";
-    reservation.checkin_at = new Date();
-    await reservation.save();
+    // หา reservation ของผู้ใช้สำหรับโต๊ะนี้ ที่ยัง pending
+    const reservation = await Reservation.findOne({
+      tableID: table._id,
+      userID: req.user._id,
+      status: "pending"
+    });
 
-    const table = await Table.findById(reservation.tableID);
-    table.status = "Unavailable";
-    await table.save();
+    // โต๊ะ Reserved → ให้ผู้จอง check-in ได้
+    if (table.status === "Reserved") {
+      if (!reservation) {
+        return res.status(403).json({ message: "You do not have a reservation for this table" });
+      }
 
-    res.json({ message: "Check-in confirmed", reservation });
+      reservation.status = "confirmed";
+      reservation.checkin_at = new Date();
+      await reservation.save();
+
+      table.status = "Unavailable";
+      await table.save();
+
+      return res.json({ message: "Check-in confirmed", reservation });
+    }
+
+    // โต๊ะ Available หรือ Unavailable → แจ้งว่าโต๊ะยังไม่พร้อม
+    if (table.status === "Available" || table.status === "Unavailable") {
+      return res.status(400).json({ message: "Table is currently unavailable" });
+    }
+
+    res.status(400).json({ message: "Cannot check-in" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
