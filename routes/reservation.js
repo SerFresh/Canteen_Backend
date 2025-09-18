@@ -64,7 +64,7 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
     // โต๊ะ Available หรือ Unavailable → เปลี่ยนเป็น Unavailable
     if (table.status === "Available" || table.status === "Unavailable") {
       table.status = "Unavailable";
-      table.arduinoSensor = false; // เซนเซอร์ยังไม่ทำงาน
+      table.arduinoSensor = true; // เซนเซอร์ยังไม่ทำงาน
       await table.save();
       return res.json({ message: "Table is now marked as unavailable until cancelled" });
     }
@@ -83,7 +83,7 @@ router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
     // เปิดโต๊ะกลับเป็น Available เฉพาะกรณีที่โต๊ะถูกบล็อก
     if (table.status === "Unavailable") {
       table.status = "Available";
-      table.arduinoSensor = true; // เปิดเซนเซอร์ด้วย
+      table.arduinoSensor = false; // เปิดเซนเซอร์ด้วย
       await table.save();
 
       // ส่งคำสั่งไปเซนเซอร์จริง เช่น MQTT, API, GPIO
