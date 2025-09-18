@@ -31,4 +31,16 @@ router.patch("/:id/status", async (req, res) => {
   }
 });
 
+// GET /api/tables/:id/sensor
+router.get("/:id/sensor", async (req, res) => {
+  try {
+    const table = await Table.findById(req.params.id).select("arduinoSensor");
+    if (!table) return res.status(404).json({ message: "Table not found" });
+
+    res.json({ arduinoSensor: table.arduinoSensor });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
