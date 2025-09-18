@@ -4,16 +4,16 @@ const Table = require("../models/Table");
 
 async function expireReservations() {
   try {
-    const now = new Date();
+    const now = Date.now(); // เวลาเป็น ms
 
-    const expiredReservations = await Reservation.find({
-      status: "pending",
-      $expr: {
-        $lt: [
-          { $add: ["$reserved_at", { $multiply: ["$duration_minutes", 60000] }] },
-          now
-        ]
-      }
+    // ดึงเฉพาะ pending reservations
+    const reservations = await Reservation.find({ status: "pending" });
+
+    // filter reservation ที่หมดเวลา
+    const expiredReservations = reservations.filter(reservation => {
+      const reservedTime = reservation.reserved_at.getTime();
+      const durationMs = reservation.duration_minutes * 60 * 1000;
+      return reservedTime + durationMs <= now;
     });
 
     for (const reservation of expiredReservations) {
@@ -28,10 +28,18 @@ async function expireReservations() {
 
       console.log(`✅ Expired reservation: ${reservation._id}`);
     }
+
+    if (expiredReservations.length === 0) {
+      console.log("⏱ No reservations to expire at this time.");
+    }
+
   } catch (err) {
     console.error("Expire job error:", err);
   }
 }
 
-// ✅ รันทุก 1 นาที ไม่ใช่ทุกวิ
+// รันทุก 1 นาที
 setInterval(expireReservations, 60 * 1000);
+
+// Export เผื่ออยากเรียกแบบ manual
+module.exports = expireReservations;
