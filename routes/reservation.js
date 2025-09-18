@@ -61,9 +61,11 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
       return res.json({ message: "Check-in confirmed", reservation });
     }
 
-    // โต๊ะ Available หรือ Unavailable → แจ้งว่าโต๊ะยังไม่พร้อม
+    // โต๊ะ Available หรือ Unavailable → เปลี่ยนเป็น Unavailable
     if (table.status === "Available" || table.status === "Unavailable") {
-      return res.status(400).json({ message: "Table is currently unavailable" });
+      table.status = "Unavailable"; // บล็อกโต๊ะ
+      await table.save();
+      return res.json({ message: "Table is now marked as unavailable until cancelled" });
     }
 
     res.status(400).json({ message: "Cannot check-in" });

@@ -31,4 +31,23 @@ router.patch("/:id/status", async (req, res) => {
   }
 });
 
+router.put("/:tableId/unblock", isAuthenticated, async (req, res) => {
+  try {
+    const table = await Table.findById(req.params.tableId);
+    if (!table) return res.status(404).json({ message: "Table not found" });
+
+    // เปลี่ยนโต๊ะกลับเป็น Available เฉพาะกรณีที่โต๊ะถูกบล็อก
+    if (table.status === "Unavailable") {
+      table.status = "Available";
+      await table.save();
+      return res.json({ message: "Table is now available", table });
+    }
+
+    // ถ้าโต๊ะไม่ใช่ Unavailable → ไม่มีอะไรต้องทำ
+    res.status(400).json({ message: "Table is not blocked" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
