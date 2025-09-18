@@ -16,12 +16,7 @@ app.use(cors({ origin: ["http://localhost:5173"], credentials: true }));
 
 // Connect MongoDB ก่อน router
 connectDB()
-  .then(() => {
-    console.log("MongoDB connected");
-
-    // ✅ เรียก jobs หลังจาก DB พร้อมแล้วเท่านั้น
-    require("./jobs/expireReservations");
-  })
+  .then(() => console.log("MongoDB connected"))
   .catch(err => console.error("MongoDB connection error:", err));
 
 // Routes
