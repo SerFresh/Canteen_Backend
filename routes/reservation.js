@@ -5,16 +5,19 @@ const isAuthenticated = require("../middleware/auth");
 const router = express.Router();
 
 /* ---------- CREATE RESERVATION ---------- */
-router.post("/", isAuthenticated, async (req, res) => {
+router.post("/:tableId", isAuthenticated, async (req, res) => {
   try {
-    const { tableID, duration_minutes } = req.body;
+    const { duration_minutes } = req.body;
     const userID = req.user._id;
+    const tableID = req.params.tableId;
 
     if (!userID) return res.status(500).json({ message: "userID missing" });
 
     const table = await Table.findById(tableID);
     if (!table) return res.status(404).json({ message: "Table not found" });
-    if (table.status !== "Available") return res.status(400).json({ message: "Table not available" });
+    if (table.status !== "Available") {
+      return res.status(400).json({ message: "Table not available" });
+    }
 
     const reservation = await Reservation.create({
       tableID,

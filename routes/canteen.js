@@ -15,8 +15,29 @@ router.post("/", async (req, res) => {
 });
 
 router.get("/", async (req, res) => {
-  try { const canteens = await Canteen.find(); res.json(canteens); }
-  catch (err) { res.status(500).json({ error: err.message }); }
+  try {
+    const canteens = await Canteen.find();
+
+    const result = await Promise.all(
+      canteens.map(async (canteen) => {
+        // หาทุก zone ใน canteen
+        const zones = await Zone.find({ canteenID: canteen._id }).select("_id");
+        const zoneIDs = zones.map(z => z._id);
+
+        // นับโต๊ะที่อยู่ใน zone เหล่านี้
+        const tableCount = await Table.countDocuments({ zoneID: { $in: zoneIDs } });
+
+        return {
+          ...canteen.toObject(),
+          tableCount
+        };
+      })
+    );
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.put("/:canteenId", async (req, res) => {
