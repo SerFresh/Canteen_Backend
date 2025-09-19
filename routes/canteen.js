@@ -24,12 +24,19 @@ router.get("/", async (req, res) => {
         const zones = await Zone.find({ canteenID: canteen._id }).select("_id");
         const zoneIDs = zones.map(z => z._id);
 
-        // นับโต๊ะที่อยู่ใน zone เหล่านี้
-        const tableCount = await Table.countDocuments({ zoneID: { $in: zoneIDs } });
+        // นับโต๊ะทั้งหมดใน zone
+        const totalTables = await Table.countDocuments({ zoneID: { $in: zoneIDs } });
+
+        // นับโต๊ะที่ Unavailable หรือ Reserved
+        const blockedTables = await Table.countDocuments({
+          zoneID: { $in: zoneIDs },
+          status: { $in: ["Unavailable", "Reserved"] }
+        });
 
         return {
           ...canteen.toObject(),
-          tableCount
+          totalTables,
+          blockedTables
         };
       })
     );
@@ -39,6 +46,7 @@ router.get("/", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 router.put("/:canteenId", async (req, res) => {
   try {
