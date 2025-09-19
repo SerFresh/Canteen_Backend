@@ -43,4 +43,17 @@ router.get("/:id/sensor", async (req, res) => {
   }
 });
 
+// GET /api/tables/:id/sensor
+router.get("/:id/status", async (req, res) => {
+  try {
+    const table = await Table.findById(req.params.id).select("status");
+    if (!table) return res.status(404).json({ message: "Table not found" });
+
+    res.json({ status: table.status });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 module.exports = router;
