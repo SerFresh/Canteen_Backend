@@ -42,7 +42,7 @@ router.post("/register", async (req, res) => {
     const verifyToken = jwt.sign(
       { id: newUser._id },
       process.env.JWT_SECRET,
-      { expiresIn: "1m" }
+      { expiresIn: "5m" }
     );
 
     const verifyUrl = `https://canteen-backend-ten.vercel.app/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
