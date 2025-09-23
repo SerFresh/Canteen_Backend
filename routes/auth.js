@@ -45,7 +45,7 @@ router.post("/register", async (req, res) => {
       { expiresIn: "5m" }
     );
 
-    const verifyUrl = `https://canteen-backend-ten.vercel.app/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
+    const verifyUrl = `https://canteen-backend-igyy.onrender.com/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
 
     // ✅ ส่งอีเมล 
     await sendEmail(
