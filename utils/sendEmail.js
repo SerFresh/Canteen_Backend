@@ -6,7 +6,7 @@ async function sendEmail(to, subject, html) {
   try {
     await resend.emails.send({
       from: "no-reply@yourdomain.com",
-      to: "youremail@gmail.com",
+      to: "freshhy75.42@gmail.com",
       subject: "Test Email",
       html: "<p>ทดสอบส่งอีเมล</p>"
     });
