@@ -8,6 +8,12 @@ const auth = require("../middleware/auth");
 
 const User = require("../models/User");
 
+// Helper: hash password
+const hashPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(password, salt);
+};
+
 // POST /register
 router.post("/register", async (req, res) => {
   try {
@@ -22,8 +28,7 @@ router.post("/register", async (req, res) => {
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ message: "อีเมลนี้ถูกใช้งานแล้ว" });
 
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    const hashedPassword = await hashPassword(password);
 
     // สร้าง user ใหม่
     const newUser = new User({
@@ -38,19 +43,19 @@ router.post("/register", async (req, res) => {
 
     await newUser.save();
 
-    // สร้าง token 1 นาที
+    // สร้าง token อายุ 5 นาที
     const verifyToken = jwt.sign(
       { id: newUser._id },
       process.env.JWT_SECRET,
       { expiresIn: "5m" }
     );
 
-    const verifyUrl = `https://canteen-backend-igyy.onrender.com/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
+    const verifyUrl = `${process.env.BACKEND_URL}/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
 
-    // ✅ ส่งอีเมล 
+    // ✅ ส่งอีเมล
     await sendEmail(
-       email, 
-       "ยืนยันการสมัครสมาชิก", 
+      email,
+      "ยืนยันการสมัครสมาชิก", 
        `<p>⋆˙⟡ สวัสดี ${name}⋆˙⟡</p> 
        <p>กรุณาคลิกปุ่มก์ด้านล่างเพื่อยืนยันอีเมลของคุณ ⸜(｡˃ ᵕ ˂ )⸝♡</p> 
        <a href="${verifyUrl}" 
@@ -67,16 +72,15 @@ router.post("/register", async (req, res) => {
         <p>♡ ขอให้มีความสุขกับการใช้งานบริการของเรา ♡</p> `
       );
 
-    // ตั้ง timeout ลบ user ถ้ายังไม่ verified หลัง 5 นาที
+    // ตั้ง timeout ลบ user ถ้าไม่ verify ภายใน 5 นาที (ข้อจำกัด: ถ้า server restart จะไม่ทำงาน)
     setTimeout(async () => {
       const user = await User.findById(newUser._id);
       if (user && !user.verified) {
         await User.findByIdAndDelete(newUser._id);
         console.log(`User ${user.email} deleted due to expired verification token`);
       }
-    }, 300 * 1000); // 5 นาที
+    }, 300 * 1000);
 
-    // ส่ง response กลับ frontend พร้อม token
     res.status(201).json({
       message: "สมัครสมาชิกสำเร็จ กรุณายืนยันอีเมลที่กล่องข้อความ",
       token: verifyToken
@@ -105,16 +109,17 @@ router.post("/login", async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "รหัสผ่านไม่ถูกต้อง" });
 
-    // สร้าง JWT Token
+    // สร้าง JWT Token (1 วัน)
     const token = jwt.sign(
       { id: user._id, email: user.email },
-      process.env.JWT_SECRET
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
     );
 
     res.json({
       message: "เข้าสู่ระบบสำเร็จ",
       token,
-      user: { name: user.name, nicname: user.nicname, email: user.email, imageProfile: user.imageProfile }
+      user: { name: user.name, nickname: user.nickname, email: user.email, imageProfile: user.imageProfile }
     });
   } catch (err) {
     console.error(err);
@@ -128,24 +133,21 @@ router.get("/verify-email", async (req, res) => {
     const { token } = req.query;
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // หา user จาก id
     const user = await User.findById(decoded.id);
     if (!user) return res.status(400).send("ไม่พบผู้ใช้");
 
-    // อัปเดตว่า verified แล้ว
     user.verified = true;
     await user.save();
 
-    // 🔑 ออก token สำหรับ login
+    // ออก token login ใหม่
     const loginToken = jwt.sign(
       { id: user._id, email: user.email },
-      process.env.JWT_SECRET
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
     );
 
-    // ✅ redirect ไป frontend พร้อม token
-    return res.redirect(
-      `http://localhost:5173/login-success?token=${loginToken}`
-    );
+    // Redirect ไป frontend
+    return res.redirect(`${process.env.FRONTEND_URL}/login-success?token=${loginToken}`);
   } catch (err) {
     return res.status(400).send("ลิงก์ไม่ถูกต้องหรือหมดอายุ");
   }
@@ -160,15 +162,13 @@ router.post("/forgot-password", async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "ไม่พบผู้ใช้" });
 
-    // สร้าง token แบบ JWT หรือ random string
     const resetToken = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 
-    // บันทึกลง user
     user.resetPasswordToken = resetToken;
-    user.resetPasswordExpires = Date.now() + 3600000; // 1 ชั่วโมง
+    user.resetPasswordExpires = Date.now() + 3600000;
     await user.save();
 
-    const resetUrl = `http://localhost:5173/reset-password?token=${encodeURIComponent(resetToken)}`;
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
     await sendEmail(
       email,
@@ -199,6 +199,7 @@ router.post("/forgot-password", async (req, res) => {
   }
 });
 
+// POST /api/auth/reset-password
 router.post("/reset-password", async (req, res) => {
   try {
     const { token, password, confirmPassword } = req.body;
@@ -206,8 +207,8 @@ router.post("/reset-password", async (req, res) => {
     if (!password || !confirmPassword) return res.status(400).json({ message: "กรอกข้อมูลไม่ครบ" });
     if (password !== confirmPassword) return res.status(400).json({ message: "รหัสผ่านไม่ตรงกัน" });
 
-    // ตรวจสอบ token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
     const user = await User.findOne({
       _id: decoded.id,
       resetPasswordToken: token,
@@ -216,11 +217,7 @@ router.post("/reset-password", async (req, res) => {
 
     if (!user) return res.status(400).json({ message: "Token ไม่ถูกต้องหรือหมดอายุ" });
 
-    // Hash password ใหม่
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(password, salt);
-
-    // ลบ token
+    user.password = await hashPassword(password);
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
 
@@ -247,14 +244,10 @@ router.post("/change-password", auth, async (req, res) => {
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ message: "ผู้ใช้ไม่พบ" });
 
-    // ตรวจสอบรหัสเก่า
     const isMatch = await bcrypt.compare(oldPassword, user.password);
     if (!isMatch) return res.status(400).json({ message: "รหัสเก่าไม่ถูกต้อง" });
 
-    // Hash รหัสใหม่
-    const salt = await bcrypt.genSalt(10);
-    user.password = await bcrypt.hash(newPassword, salt);
-
+    user.password = await hashPassword(newPassword);
     await user.save();
 
     res.json({ message: "เปลี่ยนรหัสผ่านสำเร็จ" });
@@ -263,7 +256,5 @@ router.post("/change-password", auth, async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
-
-
 
 module.exports = router;
