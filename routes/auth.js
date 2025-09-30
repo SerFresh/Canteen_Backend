@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+import { Resend } from 'resend';
 
 const bcrypt = require("bcryptjs");
 const sendEmail = require("../utils/sendEmail");
@@ -7,12 +8,28 @@ const jwt = require("jsonwebtoken");
 const auth = require("../middleware/auth");
 
 const User = require("../models/User");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Helper: hash password
 const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
   return bcrypt.hash(password, salt);
 };
+
+async function sendEmail(to, subject, html) {
+  try {
+    await resend.emails.send({
+      from: "freshhy75.42@gmail.com", // แนะนำใช้ domain ของคุณเอง
+      to,
+      subject,
+      html,
+    });
+    console.log("✅ Email sent:", to);
+  } catch (error) {
+    console.error("❌ Email send error:", error);
+    throw error;
+  }
+}
 
 // POST /register
 router.post("/register", async (req, res) => {
