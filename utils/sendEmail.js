@@ -1,20 +1,20 @@
-const nodemailer = require("nodemailer");
+const { Resend } = require("resend");
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 async function sendEmail(to, subject, html) {
-  const transporter = nodemailer.createTransport({
-    service: "gmail", // หรือ smtp อื่น ๆ
-    auth: {
-      user: process.env.EMAIL_USER, 
-      pass: process.env.EMAIL_PASS  
-    }
-  });
-
-  await transporter.sendMail({
-    from: `"Canteen App" <${process.env.EMAIL_USER}>`,
-    to,
-    subject,
-    html
-  });
+  try {
+    await resend.emails.send({
+      from: "freshhy75.42@gmail.com", 
+      to,
+      subject,
+      html,
+    });
+    console.log("✅ Email sent:", to);
+  } catch (error) {
+    console.error("❌ Email send error:", error);
+    throw error;
+  }
 }
 
 module.exports = sendEmail;
