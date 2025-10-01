@@ -6,9 +6,9 @@ async function sendEmail(to, subject, html) {
   try {
     await resend.emails.send({
       from: "canteenkmitl@resend.dev",
-      to: "freshhy75.42@gmail.com",
-      subject: "Test Email",
-      html: "<p>ทดสอบส่งอีเมล</p>"
+      to,
+      subject,
+      html
     });
     console.log("✅ Email sent:", to);
   } catch (error) {
