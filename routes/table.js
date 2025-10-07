@@ -43,7 +43,34 @@ router.get("/:id/sensor", async (req, res) => {
   }
 });
 
-// GET /api/tables/:id/sensor
+// PATCH เพื่ออัปเดตสถานะเซนเซอร์
+router.patch("/:id/sensor", async (req, res) => {
+  try {
+    const table = await Table.findById(req.params.id);
+    if (!table) return res.status(404).json({ message: "Table not found" });
+
+    // ถ้าโต๊ะถูกจอง ให้ปิดเซนเซอร์
+    if (table.status === "Reserved") {
+      table.arduinoSensor = false; // ปิดเซนเซอร์
+      await table.save();
+      return res.json({
+        message: "Sensor disabled because table is reserved",
+        arduinoSensor: table.arduinoSensor,
+      });
+    }
+
+    // ถ้าโต๊ะไม่ได้ถูกจอง อาจเลือกเปิดใช้งานเซนเซอร์
+    res.json({
+      message: "Table is not reserved, sensor remains active",
+      arduinoSensor: table.arduinoSensor,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// GET /api/tables/:id/status
 router.get("/:id/status", async (req, res) => {
   try {
     const table = await Table.findById(req.params.id).select("status");
