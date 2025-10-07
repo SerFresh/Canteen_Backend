@@ -59,6 +59,7 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
       await reservation.save();
 
       table.status = "Unavailable";
+      table.arduinoSensor = false; // เปิดเซนเซอร์
       await table.save();
 
       return res.json({ message: "Check-in confirmed", reservation });
