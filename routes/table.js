@@ -51,7 +51,7 @@ router.patch("/:id/sensor", async (req, res) => {
 
     // ถ้าโต๊ะถูกจอง ให้ปิดเซนเซอร์
     if (table.status === "Reserved") {
-      table.arduinoSensor = false; // ปิดเซนเซอร์
+      table.arduinoSensor = True; // ปิดเซนเซอร์
       await table.save();
       return res.json({
         message: "Sensor disabled because table is reserved",
