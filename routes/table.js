@@ -5,8 +5,8 @@ const Reservation = require("../models/Reservation");
 
 const router = express.Router();
 // ค่า duration ที่ backend ยอมรับ (enum)
-const ALLOWED_DURATIONS = [30, 45, 60, 90]; // enum เดิม
-const DEFAULT_DURATION = 60; // ค่าเดิมที่อาจไม่อยู่ใน enum
+const ALLOWED_DURATIONS = [5, 10, 15]; // enum เดิม
+const DEFAULT_DURATION = 10; // ค่าเดิมที่อาจไม่อยู่ใน enum
 
 // ก่อนสร้าง reservation
 const duration = ALLOWED_DURATIONS.includes(DEFAULT_DURATION)
