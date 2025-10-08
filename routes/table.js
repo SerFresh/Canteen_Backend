@@ -1,5 +1,5 @@
 const express = require("express");
-const { verifyToken } = require("../middlewares/auth");
+const isAuthenticated = require("../middlewares/auth");
 const Table = require("../models/Table");
 const Reservation = require("../models/Reservation");
 
@@ -83,7 +83,7 @@ router.get("/:id/status", async (req, res) => {
 });
 
 // ✅ PUT /api/tables/:tableId/checkin
-router.put("/:tableId/checkin", verifyToken, async (req, res) => {
+router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
   const { tableId } = req.params;
   const userId = req.user.id;
 
