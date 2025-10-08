@@ -92,9 +92,9 @@ router.get("/:id/status", async (req, res) => {
 });
 
 /**
- 
 PUT /api/tables/:tableId/checkin
-Scan QR ของโต๊ะ → check-in*/
+Scan QR ของโต๊ะ → check-in
+*/
 router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
   const { tableId } = req.params;
   const userId = req.user.id;
@@ -105,6 +105,31 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
       $or: [{ _id: tableId }, { qr_code_token: tableId }],
     });
     if (!table) return res.status(404).json({ message: "Table not found" });
+
+    // --- เพิ่ม logic สำหรับโต๊ะ Available/Unavailable ---
+    if (table.status === "Available" || table.status === "Unavailable") {
+      table.status = "Unavailable";
+      table.arduinoSensor = true; // เปิดใช้งาน sensor
+      await table.save();
+
+      // ตั้งเวลา 30 นาทีให้ arduinoSensor = false
+      setTimeout(async () => {
+        try {
+          const t = await Table.findById(table._id);
+          if (t) {
+            t.arduinoSensor = false;
+            await t.save();
+          }
+        } catch (err) {
+          console.error("Failed to reset arduinoSensor:", err);
+        }
+      }, 5 * 60 * 1000); // 30 นาที
+
+      return res.json({
+        message: "Table is now marked as unavailable until cancelled",
+        tableId: table._id,
+      });
+    }
 
     // หา reservation ของ user ปัจจุบัน
     let reservation = await Reservation.findOne({
@@ -146,5 +171,6 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
+
 
 module.exports = router;
