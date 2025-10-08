@@ -116,6 +116,7 @@ router.put("/:reservationId/cancel", isAuthenticated, async (req, res) => {
 
     const table = await Table.findById(reservation.tableID);
     table.status = "Available";
+    table.arduinoSensor = false;
     await table.save();
 
     res.json({ message: "Reservation cancelled", reservation });
