@@ -27,6 +27,7 @@ router.post("/:tableId", isAuthenticated, async (req, res) => {
     });
 
     table.status = "Reserved";
+    table.arduinoSensor = true;
     await table.save();
 
     res.status(201).json({ message: "Reservation created", reservation });
