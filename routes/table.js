@@ -93,7 +93,7 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
 
     const reservation = await Reservation.findOne({
       tableID: tableId,
-      status: "reserved",
+      status: "Reserved",
     });
     if (!reservation)
       return res.status(404).json({ message: "No active reservation for this table" });
@@ -102,10 +102,10 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
       return res.status(403).json({ message: "Not authorized to check-in this table" });
     }
 
-    reservation.status = "checked-in";
+    reservation.status = "confirmed";
     await reservation.save();
 
-    table.status = "unavailable";
+    table.status = "Unavailable";
     table.arduinoSensor = false;
     await table.save();
 
