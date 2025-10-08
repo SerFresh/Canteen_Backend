@@ -1,5 +1,5 @@
 const express = require("express");
-const isAuthenticated = require("../middlewares/auth");
+const isAuthenticated = require("../middleware/auth");
 const Table = require("../models/Table");
 const Reservation = require("../models/Reservation");
 
