@@ -82,29 +82,45 @@ router.get("/:id/status", async (req, res) => {
   }
 });
 
-// ✅ PUT /api/tables/:tableId/checkin
+/**
+PUT /api/tables/:tableId/checkin
+Scan QR ของโต๊ะ → check-in*/
+
 router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
   const { tableId } = req.params;
   const userId = req.user.id;
 
   try {
-    const table = await Table.findById(tableId);
+    // หาโต๊ะจาก tableId หรือ qr_code_token
+    const table = await Table.findOne({ 
+      $or: [{ _id: tableId }, { qr_code_token: tableId }] 
+    });
     if (!table) return res.status(404).json({ message: "Table not found" });
 
-    const reservation = await Reservation.findOne({
-      tableID: tableId,
-      status: "Reserved",
+    // หา reservation ของ user ปัจจุบัน
+    let reservation = await Reservation.findOne({
+      tableID: table._id,
+      userID: userId,
+      status: { $in: ["Reserved", "confirmed"] },
     });
-    if (!reservation)
-      return res.status(404).json({ message: "No active reservation for this table" });
 
-    if (reservation.userID.toString() !== userId) {
-      return res.status(403).json({ message: "Not authorized to check-in this table" });
+    // ถ้าไม่มี reservation → สร้างชั่วคราว
+    if (!reservation) {
+      reservation = new Reservation({
+        tableID: table._id,
+        userID: userId,
+        status: "confirmed",
+        reserved_at: new Date(),
+        duration_minutes: 60,
+      });
+      await reservation.save();
+    } else {
+      // ถ้ามี reservation → อัปเดตเป็น confirmed
+      reservation.status = "confirmed";
+      await reservation.save();
     }
 
-    reservation.status = "confirmed";
-    await reservation.save();
-
+    // อัปเดตโต๊ะ
     table.status = "Unavailable";
     table.arduinoSensor = false;
     await table.save();
@@ -116,7 +132,7 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error", error: err });
+    res.status(500).json({ message: "Server error", error: err.message });
   }
 });
 
