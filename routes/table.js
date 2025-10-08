@@ -4,6 +4,9 @@ const Table = require("../models/Table");
 const Reservation = require("../models/Reservation");
 
 const router = express.Router();
+// ค่า duration ที่ backend ยอมรับ (enum)
+const ALLOWED_DURATIONS = [30, 45, 60, 90];
+const DEFAULT_DURATION = 60;
 
 // ✅ PATCH /api/tables/:id/status
 router.patch("/:id/status", async (req, res) => {
@@ -83,17 +86,17 @@ router.get("/:id/status", async (req, res) => {
 });
 
 /**
+ 
 PUT /api/tables/:tableId/checkin
 Scan QR ของโต๊ะ → check-in*/
-
 router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
   const { tableId } = req.params;
   const userId = req.user.id;
 
   try {
     // หาโต๊ะจาก tableId หรือ qr_code_token
-    const table = await Table.findOne({ 
-      $or: [{ _id: tableId }, { qr_code_token: tableId }] 
+    const table = await Table.findOne({
+      $or: [{ _id: tableId }, { qr_code_token: tableId }],
     });
     if (!table) return res.status(404).json({ message: "Table not found" });
 
@@ -111,7 +114,9 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
         userID: userId,
         status: "confirmed",
         reserved_at: new Date(),
-        duration_minutes: 60,
+        duration_minutes: ALLOWED_DURATIONS.includes(DEFAULT_DURATION)
+          ? DEFAULT_DURATION
+          : ALLOWED_DURATIONS[0],
       });
       await reservation.save();
     } else {
@@ -126,7 +131,7 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
     await table.save();
 
     res.json({
-      message: "Check-in successful",
+      message: "เช็คอินสำเร็จ",
       reservationId: reservation._id,
       tableId: table._id,
     });
