@@ -1,7 +1,7 @@
-import express from "express";
-import { verifyToken } from "../middlewares/auth.js";
-import Table from "../models/Table.js";
-import Reservation from "../models/Reservation.js";
+const express = require("express");
+const { verifyToken } = require("../middlewares/auth");
+const Table = require("../models/Table");
+const Reservation = require("../models/Reservation");
 
 const router = express.Router();
 
@@ -52,9 +52,8 @@ router.patch("/:id/sensor", async (req, res) => {
     const table = await Table.findById(req.params.id);
     if (!table) return res.status(404).json({ message: "Table not found" });
 
-    // ถ้าโต๊ะถูกจอง ให้ปิดเซนเซอร์
     if (table.status === "Reserved") {
-      table.arduinoSensor = true; // ปิดเซนเซอร์
+      table.arduinoSensor = true;
       await table.save();
       return res.json({
         message: "Sensor disabled because table is reserved",
@@ -62,7 +61,6 @@ router.patch("/:id/sensor", async (req, res) => {
       });
     }
 
-    // ถ้าโต๊ะไม่ได้ถูกจอง อาจเลือกเปิดใช้งานเซนเซอร์
     res.json({
       message: "Table is not reserved, sensor remains active",
       arduinoSensor: table.arduinoSensor,
@@ -87,35 +85,30 @@ router.get("/:id/status", async (req, res) => {
 // ✅ PUT /api/tables/:tableId/checkin
 router.put("/:tableId/checkin", verifyToken, async (req, res) => {
   const { tableId } = req.params;
-  const userId = req.user.id; // มาจาก verifyToken middleware
+  const userId = req.user.id;
 
   try {
-    // 1️⃣ หาโต๊ะ
     const table = await Table.findById(tableId);
     if (!table) return res.status(404).json({ message: "Table not found" });
 
-    // 2️⃣ หา reservation ปัจจุบันของโต๊ะ
     const reservation = await Reservation.findOne({
       tableID: tableId,
-      status: "reserved", // ปรับตาม field ใน schema
+      status: "reserved",
     });
     if (!reservation)
       return res.status(404).json({ message: "No active reservation for this table" });
 
-    // 3️⃣ ตรวจสอบสิทธิ์ผู้ใช้
     if (reservation.userID.toString() !== userId) {
       return res.status(403).json({ message: "Not authorized to check-in this table" });
     }
 
-    // 4️⃣ อัปเดตสถานะโต๊ะและ reservation
     reservation.status = "checked-in";
     await reservation.save();
 
     table.status = "unavailable";
-    table.arduinoSensor = false; // เปิดเซนเซอร์
+    table.arduinoSensor = false;
     await table.save();
 
-    // 5️⃣ ส่ง response
     res.json({
       message: "Check-in successful",
       reservationId: reservation._id,
@@ -127,4 +120,4 @@ router.put("/:tableId/checkin", verifyToken, async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;
