@@ -1,8 +1,11 @@
-const express = require("express");
-const router = express.Router();
-const Table = require("../models/Table");
+import express from "express";
+import { verifyToken } from "../middlewares/auth.js";
+import Table from "../models/Table.js";
+import Reservation from "../models/Reservation.js";
 
-// PATCH /api/tables/:id/status
+const router = express.Router();
+
+// ✅ PATCH /api/tables/:id/status
 router.patch("/:id/status", async (req, res) => {
   try {
     const { occupied } = req.body; // true = มีคน, false = ไม่มีคน
@@ -31,7 +34,7 @@ router.patch("/:id/status", async (req, res) => {
   }
 });
 
-// GET /api/tables/:id/sensor
+// ✅ GET /api/tables/:id/sensor
 router.get("/:id/sensor", async (req, res) => {
   try {
     const table = await Table.findById(req.params.id).select("arduinoSensor");
@@ -43,7 +46,7 @@ router.get("/:id/sensor", async (req, res) => {
   }
 });
 
-// PATCH เพื่ออัปเดตสถานะเซนเซอร์
+// ✅ PATCH /api/tables/:id/sensor
 router.patch("/:id/sensor", async (req, res) => {
   try {
     const table = await Table.findById(req.params.id);
@@ -69,8 +72,7 @@ router.patch("/:id/sensor", async (req, res) => {
   }
 });
 
-
-// GET /api/tables/:id/status
+// ✅ GET /api/tables/:id/status
 router.get("/:id/status", async (req, res) => {
   try {
     const table = await Table.findById(req.params.id).select("status");
@@ -82,5 +84,47 @@ router.get("/:id/status", async (req, res) => {
   }
 });
 
+// ✅ PUT /api/tables/:tableId/checkin
+router.put("/:tableId/checkin", verifyToken, async (req, res) => {
+  const { tableId } = req.params;
+  const userId = req.user.id; // มาจาก verifyToken middleware
 
-module.exports = router;
+  try {
+    // 1️⃣ หาโต๊ะ
+    const table = await Table.findById(tableId);
+    if (!table) return res.status(404).json({ message: "Table not found" });
+
+    // 2️⃣ หา reservation ปัจจุบันของโต๊ะ
+    const reservation = await Reservation.findOne({
+      tableID: tableId,
+      status: "reserved", // ปรับตาม field ใน schema
+    });
+    if (!reservation)
+      return res.status(404).json({ message: "No active reservation for this table" });
+
+    // 3️⃣ ตรวจสอบสิทธิ์ผู้ใช้
+    if (reservation.userID.toString() !== userId) {
+      return res.status(403).json({ message: "Not authorized to check-in this table" });
+    }
+
+    // 4️⃣ อัปเดตสถานะโต๊ะและ reservation
+    reservation.status = "checked-in";
+    await reservation.save();
+
+    table.status = "unavailable";
+    table.arduinoSensor = false; // เปิดเซนเซอร์
+    await table.save();
+
+    // 5️⃣ ส่ง response
+    res.json({
+      message: "Check-in successful",
+      reservationId: reservation._id,
+      tableId: table._id,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+});
+
+export default router;
