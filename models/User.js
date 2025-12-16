@@ -4,18 +4,28 @@ const UserSchema = new mongoose.Schema({
   name: { type: String, required: true },
   nickname: { type: String },
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+
+  // ❗ password ไม่ required แล้ว
+  password: { type: String },
+
   imageProfile: { type: String },
-  verified: { type: Boolean, default: false }, // ✅ ฟิลด์ใหม่
+
+  // 🔹 เพิ่ม
+  provider: { type: String, enum: ["local", "google"], default: "local" },
+  googleId: { type: String },
+
+  verified: { type: Boolean, default: false },
+
   resetPasswordToken: String,
   resetPasswordExpires: Date,
-  createdAt: { type: Date, default: Date.now } // ✅ ต้องมี เพื่อ TTL index
+
+  createdAt: { type: Date, default: Date.now }
 });
 
-// ✅ TTL index: ลบ 5 นาทีหลังสร้างเฉพาะ user ที่ verified = false
+// TTL index: ลบ user local ที่ยังไม่ verify
 UserSchema.index(
   { createdAt: 1 },
-  { expireAfterSeconds: 300, partialFilterExpression: { verified: false } }
+  { expireAfterSeconds: 300, partialFilterExpression: { verified: false, provider: "local" } }
 );
 
 module.exports = mongoose.model("User", UserSchema, "users");
