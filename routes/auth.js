@@ -7,70 +7,12 @@ const jwt = require("jsonwebtoken");
 const auth = require("../middleware/auth");
 
 const User = require("../models/User");
-const admin = require("../middleware/firebaseAdmin.js")
 
 // Helper: hash password
 const hashPassword = async (password) => {
   const salt = await bcrypt.genSalt(10);
   return bcrypt.hash(password, salt);
 };
-
-
-// POST /api/auth/google
-router.post("/google", async (req, res) => {
-  try {
-    const { idToken } = req.body;
-    if (!idToken) return res.status(400).json({ message: "Missing token" });
-
-    // 🔐 verify token จาก Google
-    const decoded = await admin.auth().verifyIdToken(idToken);
-
-    const { uid, email, name, picture } = decoded;
-
-    let user = await User.findOne({ email });
-
-    // 🆕 ถ้ายังไม่มี user → create
-    if (!user) {
-      user = new User({
-        name,
-        email,
-        imageProfile: picture,
-        provider: "google",
-        googleId: uid,
-        verified: true // ✅ ข้าม email verification
-      });
-
-      await user.save();
-    }
-
-    // ❌ ป้องกัน email ซ้ำ (สมัคร local มาก่อน)
-    if (user.provider !== "google") {
-      return res.status(400).json({
-        message: "อีเมลนี้สมัครด้วยรหัสผ่านไว้แล้ว"
-      });
-    }
-
-    // 🔑 ออก JWT ของระบบ
-    const token = jwt.sign(
-      { id: user._id, email: user.email },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    res.json({
-      message: "เข้าสู่ระบบด้วย Google สำเร็จ",
-      token,
-      user: {
-        name: user.name,
-        email: user.email,
-        imageProfile: user.imageProfile
-      }
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(401).json({ message: "Google token ไม่ถูกต้อง" });
-  }
-});
 
 // POST /register
 router.post("/register", async (req, res) => {
@@ -160,12 +102,6 @@ router.post("/login", async (req, res) => {
 
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: "ผู้ใช้ไม่พบ" });
-
-    if (user.provider === "google") {
-      return res.status(400).json({
-        message: "บัญชีนี้ใช้ Google Login"
-      });
-    }
 
     if (!user.verified)
       return res.status(400).json({ message: "กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ" });
