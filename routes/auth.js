@@ -53,9 +53,10 @@ router.post("/register", async (req, res) => {
     const verifyUrl = `${process.env.BACKEND_URL}/api/auth/verify-email?token=${encodeURIComponent(verifyToken)}`;
 
     // ✅ ส่งอีเมล
-    await sendEmail(
-      email,
-      "ยืนยันการสมัครสมาชิก", 
+    await sendEmail({
+      to: email,
+      subject: "ยืนยันการสมัครสมาชิก",
+      html:
        `<p>⋆˙⟡ สวัสดี ${name}⋆˙⟡</p> 
        <p>กรุณาคลิกปุ่มก์ด้านล่างเพื่อยืนยันอีเมลของคุณ ⸜(｡˃ ᵕ ˂ )⸝♡</p> 
        <a href="${verifyUrl}" 
@@ -70,7 +71,7 @@ router.post("/register", async (req, res) => {
         ยืนยันอีเมล 
         </a> 
         <p>♡ ขอให้มีความสุขกับการใช้งานบริการของเรา ♡</p> `
-      );
+      });
 
     // ตั้ง timeout ลบ user ถ้าไม่ verify ภายใน 5 นาที (ข้อจำกัด: ถ้า server restart จะไม่ทำงาน)
     setTimeout(async () => {
@@ -170,9 +171,10 @@ router.post("/forgot-password", async (req, res) => {
 
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${encodeURIComponent(resetToken)}`;
 
-    await sendEmail(
-      email,
-      "รีเซ็ตรหัสผ่าน",
+    await sendEmail({
+      to: email,
+      subject: "ตั้งรหัสผ่านใหม่",
+      html:
       `<p>⋆˙⟡ สวัสดี ${user.name} ⋆˙⟡</p>
        <p>คลิกที่ปุ่มด้านล่างเพื่อตั้งรหัสผ่านใหม่ ⸜(｡˃ ᵕ ˂ )⸝♡</p>
        <a href="${resetUrl}" 
@@ -190,7 +192,7 @@ router.post("/forgot-password", async (req, res) => {
       ตั้งรหัสผ่านใหม่
     </a>
     <p>♡ อย่าลืมรหัสผ่านอีกน้า ♡</p>`
-    );
+  });
 
     res.json({ message: "ส่งลิงก์รีเซ็ตรหัสผ่านไปยังอีเมลเรียบร้อยแล้ว" });
   } catch (err) {

@@ -1,20 +1,20 @@
-const { Resend } = require("resend");
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: process.env.SMTP_PORT,
+  secure: false, // ใช้ TLS
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
-async function sendEmail(to, subject, html) {
-  try {
-    await resend.emails.send({
-      from: "onboarding@resend.dev",
-      to,
-      subject,
-      html
-    });
-    console.log("✅ Email sent:", to);
-  } catch (error) {
-    console.error("❌ Email send error:", error);
-    throw error;
-  }
+export async function sendEmail({ to, subject, html }) {
+  await transporter.sendMail({
+    from: `"CanteenKMITL" <${process.env.EMAIL_USER}>`,
+    to,
+    subject,
+    html,
+  });
 }
-
-module.exports = sendEmail;
