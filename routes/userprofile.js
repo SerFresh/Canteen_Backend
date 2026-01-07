@@ -3,63 +3,138 @@ const multer = require("multer");
 const cloudinary = require("cloudinary").v2;
 const User = require("../models/User");
 const authMiddleware = require("../middleware/auth");
+const checkRole = require("../middleware/checkRole");
 
 const router = express.Router();
 
-// ตั้ง multer สำหรับรับไฟล์
-const storage = multer.memoryStorage(); // ใช้ memoryStorage แทน local folder
-const upload = multer({ storage });
+// multer
+const upload = multer({ storage: multer.memoryStorage() });
 
-// ตั้งค่า Cloudinary
+// cloudinary
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// PUT /profile
-router.put("/profile", authMiddleware, upload.single("image"), async (req, res) => {
-  try {
-    const { name, nickname } = req.body;
-    const updateData = { name, nickname };
+// helper upload
+const uploadToCloudinary = (buffer) => {
+  return new Promise((resolve, reject) => {
+    cloudinary.uploader
+      .upload_stream({ folder: "profiles" }, (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      })
+      .end(buffer);
+  });
+};
 
-    if (req.file) {
-      // อัปโหลดไป Cloudinary
-      const result = await cloudinary.uploader.upload_stream(
-        { folder: "user_profiles" },
-        async (error, result) => {
-          if (error) return res.status(500).json({ message: "Cloudinary upload error", error });
-          
-          updateData.imageProfile = result.secure_url; // เก็บ URL ใน MongoDB
-
-          // อัปเดต user
-          const updatedUser = await User.findByIdAndUpdate(req.user.id, updateData, { new: true });
-          res.json(updatedUser);
-        }
-      );
-
-      // ส่งไฟล์ไป cloudinary
-      result.end(req.file.buffer);
-    } else {
-      // ถ้าไม่มีรูป อัปเดต name/nickname
-      const updatedUser = await User.findByIdAndUpdate(req.user.id, updateData, { new: true });
-      res.json(updatedUser);
-    }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// GET /api/user/profile
+/* =========================
+   GET PROFILE
+========================= */
 router.get("/profile", authMiddleware, async (req, res) => {
-  try {
-    const user = await User.findById(req.user.id).select("name nickname email imageProfile");
-    if (!user) return res.status(404).json({ message: "ไม่พบผู้ใช้" });
-    res.json(user);
-  } catch (error) {
-    res.status(500).json({ message: "เกิดข้อผิดพลาด", error: error.message });
-  }
+  const user = await User.findById(req.user.id)
+    .select("username nickname imageProfile role");
+
+  if (!user) return res.status(404).json({ message: "User not found" });
+  res.json(user);
 });
+
+/* =========================
+   UPDATE PROFILE
+========================= */
+router.put(
+  "/profile",
+  authMiddleware,
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      const { nickname } = req.body;
+      const updateData = {};
+
+      if (nickname) updateData.nickname = nickname;
+
+      if (req.file) {
+        const result = await uploadToCloudinary(req.file.buffer);
+        updateData.imageProfile = result.secure_url;
+      }
+
+      const user = await User.findByIdAndUpdate(
+        req.user.id,
+        updateData,
+        { new: true }
+      ).select("username nickname imageProfile role");
+
+      res.json(user);
+    } catch (err) {
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+);
+
+/* =========================
+   ADMIN: GET ALL USERS
+========================= */
+router.get(
+  "/",
+  authMiddleware,
+  checkRole(["admin"]),
+  async (req, res) => {
+    const users = await User.find()
+      .select("username nickname imageProfile role createdAt");
+    res.json(users);
+  }
+);
+
+/* =========================
+   ADMIN: CHANGE USER ROLE
+========================= */
+router.put(
+  "/:id/role",
+  authMiddleware,
+  checkRole(["admin"]),
+  async (req, res) => {
+    const { role } = req.body;
+
+    if (!["user", "admin", "chef"].includes(role))
+      return res.status(400).json({ message: "Invalid role" });
+
+    if (req.user.id === req.params.id)
+      return res.status(400).json({
+        message: "ไม่สามารถเปลี่ยน role ของตัวเองได้",
+      });
+
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true }
+    ).select("username nickname role");
+
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
+
+    res.json({ message: "เปลี่ยน role สำเร็จ", user });
+  }
+);
+
+/* =========================
+   ADMIN: GET USER BY ROLE
+========================= */
+router.get(
+  "/role/:role",
+  authMiddleware,
+  checkRole(["admin"]),
+  async (req, res) => {
+    const { role } = req.params;
+
+    if (!["user", "admin", "chef"].includes(role))
+      return res.status(400).json({ message: "Invalid role" });
+
+    const users = await User.find({ role })
+      .select("username nickname imageProfile role");
+
+    res.json(users);
+  }
+);
 
 module.exports = router;
