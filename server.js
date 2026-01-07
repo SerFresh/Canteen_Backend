@@ -7,6 +7,7 @@ const userProfileRoutes = require("./routes/userprofile");
 const canteenRoutes = require("./routes/canteen");
 const reservationRoutes = require("./routes/reservation");
 const tablesRoutes = require("./routes/table");
+const innsRoutes = require("./routes/inn");
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use("/api/user", userProfileRoutes);
 app.use("/api/canteen", canteenRoutes);
 app.use("/api/reservation", reservationRoutes);
 app.use("/api/tables", tablesRoutes);
+app.use("/api/inns", innsRoutes);
 
 // Start server (Render ต้องการตรงนี้)
 const PORT = process.env.PORT || 5000;
