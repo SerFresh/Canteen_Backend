@@ -95,7 +95,7 @@ router.patch("/:id/clear", async (req, res) => {
 });
 
 // 📡 รับค่าจาก Arduino Sensor
-router.patch("/inn/:innId/sensor", async (req, res) => {
+router.patch("/:innId/sensor", async (req, res) => {
   try {
     const { innId } = req.params;
     const { sensor } = req.body;
