@@ -12,6 +12,15 @@ const InnSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    name: {
+      type: String,
+      trim: true,
+    },
+    type: {
+      type: String,
+      enum: ["food", "drink","storage"],
+      required: true,
+    },
     arduinoSensor: {
       type: Boolean,
       default: false,

@@ -3,9 +3,9 @@ const mongoose = require("mongoose");
 
 const MenuSchema = new mongoose.Schema(
   {
-    innNameID: {
+    innID: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "InnName",
+      ref: "Inn",
       required: true,
     },
     name: {
