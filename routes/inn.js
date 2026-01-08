@@ -4,7 +4,7 @@ const Canteen = require("../models/Canteen");
 const Inn = require("../models/Inn");
 
 // ➕ เพิ่ม Inn ในโรงอาหาร
-router.post("/canteens/:canteenId/inns", async (req, res) => {
+router.post("/:canteenId/inns", async (req, res) => {
   try {
     const { canteenId } = req.params;
     const { innNumber, name, type } = req.body;
@@ -88,6 +88,49 @@ router.patch("/:id/clear", async (req, res) => {
     res.json({
       message: "Inn name and type cleared",
       data: inn,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// 📡 รับค่าจาก Arduino Sensor
+router.patch("/inn/:innId/sensor", async (req, res) => {
+  try {
+    const { innId } = req.params;
+    const { sensor } = req.body;
+
+    if (sensor === undefined) {
+      return res.status(400).json({
+        message: "sensor value is required",
+      });
+    }
+
+    // แปลงค่า sensor → boolean
+    const sensorValue = sensor === true || sensor === 1 || sensor === "1";
+
+    const status = sensorValue ? "Open" : "Close";
+
+    const inn = await Inn.findByIdAndUpdate(
+      innId,
+      {
+        arduinoSensor: sensorValue,
+        status,
+      },
+      { new: true }
+    );
+
+    if (!inn) {
+      return res.status(404).json({ message: "Inn not found" });
+    }
+
+    res.json({
+      message: "Sensor data updated",
+      data: {
+        innId: inn._id,
+        arduinoSensor: inn.arduinoSensor,
+        status: inn.status,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

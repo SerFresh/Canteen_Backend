@@ -19,16 +19,10 @@ const InnSchema = new mongoose.Schema(
     type: {
       type: String,
       enum: ["food", "drink","storage"],
-      required: true,
     },
     arduinoSensor: {
       type: Boolean,
       default: false,
-    },
-    status: {
-      type: String,
-      enum: ["Open", "Close"],
-      default: "Close",
     },
   },
   { timestamps: true }
