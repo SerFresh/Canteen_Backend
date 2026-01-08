@@ -2,6 +2,7 @@ const express = require("express");
 const Canteen = require("../models/Canteen");
 const Zone = require("../models/Zone");
 const Table = require("../models/Table");
+const Inn = require("../models/Inn");
 
 const router = express.Router();
 
