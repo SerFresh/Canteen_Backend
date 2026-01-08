@@ -75,8 +75,8 @@ router.patch("/:id/clear", async (req, res) => {
     const inn = await Inn.findByIdAndUpdate(
       req.params.id,
       {
-        name: null,
-        type: null,
+        name: "none",
+        type: "none",
       },
       { new: true }
     );
