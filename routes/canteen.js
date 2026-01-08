@@ -93,56 +93,54 @@ router.put("/:canteenId/zones/:zoneId/tables/:tableId", async (req, res) => {
 });
 
 /* ---------- GET CANTEEN FULL ---------- */
-router.get("/:canteenId", async (req, res) => {
-  try {
-    const canteen = await Canteen.findById(req.params.canteenId);
-    if (!canteen) return res.status(404).json({ message: "Canteen not found" });
-
-    const zones = await Zone.find({ canteenID: canteen._id });
-    const zonesWithTables = await Promise.all(zones.map(async z => {
-      const tables = await Table.find({ zoneID: z._id });
-      return { ...z.toObject(), tables };
-    }));
-
-    res.json({ ...canteen.toObject(), zones: zonesWithTables });
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
 // router.get("/:canteenId", async (req, res) => {
 //   try {
 //     const canteen = await Canteen.findById(req.params.canteenId);
-//     if (!canteen)
-//       return res.status(404).json({ message: "Canteen not found" });
+//     if (!canteen) return res.status(404).json({ message: "Canteen not found" });
 
-//     // 🔹 Zones + Tables
 //     const zones = await Zone.find({ canteenID: canteen._id });
-//     const zonesWithTables = await Promise.all(
-//       zones.map(async (z) => {
-//         const tables = await Table.find({ zoneID: z._id });
-//         return { ...z.toObject(), tables };
-//       })
-//     );
+//     const zonesWithTables = await Promise.all(zones.map(async z => {
+//       const tables = await Table.find({ zoneID: z._id });
+//       return { ...z.toObject(), tables };
+//     }));
 
-//     // 🔹 Inns + InnName
-//     const inns = await Inn.find({ canteenID: canteen._id });
-//     const innsWithName = await Promise.all(
-//       inns.map(async (inn) => {
-//         const innNames = await InnName.find({ innID: inn._id });
-//         return {
-//           ...inn.toObject(),
-//           names: innNames, // ชื่อร้าน
-//         };
-//       })
-//     );
-
-//     res.json({
-//       ...canteen.toObject(),
-//       zones: zonesWithTables,
-//       inns: innsWithName,
-//     });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
+//     res.json({ ...canteen.toObject(), zones: zonesWithTables });
+//   } catch (err) { res.status(500).json({ error: err.message }); }
 // });
+
+router.get("/:canteenId", async (req, res) => {
+  try {
+    const { canteenId } = req.params;
+
+    // 1. Canteen
+    const canteen = await Canteen.findById(canteenId);
+    if (!canteen) {
+      return res.status(404).json({ message: "Canteen not found" });
+    }
+
+    // 2. Zones + Tables
+    const zones = await Zone.find({ canteenID: canteen._id });
+    const zonesWithTables = await Promise.all(
+      zones.map(async (z) => {
+        const tables = await Table.find({ zoneID: z._id });
+        return { ...z.toObject(), tables };
+      })
+    );
+
+    // 3. Inns (ชื่อร้าน + สถานะจาก sensor)
+    const inns = await Inn.find({ canteenID: canteen._id }).select(
+      "innNumber name status arduinoSensor"
+    );
+
+    // 4. Response
+    res.json({
+      ...canteen.toObject(),
+      inns,          // ⭐ เพิ่มตรงนี้
+      zones: zonesWithTables,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 module.exports = router;
