@@ -95,80 +95,43 @@ router.patch("/:id/clear", async (req, res) => {
 });
 
 // 📡 รับค่าจาก Arduino Sensor
-// router.patch("/:innId/sensor", async (req, res) => {
-//   try {
-//     const { innId } = req.params;
-//     const { sensor } = req.body;
+router.patch("/:canteenId/inns/:innId/sensor", async (req, res) => {
+  try {
+    const { canteenId, innId } = req.params;
+    const { arduinoSensor } = req.body;
 
-//     if (sensor === undefined) {
-//       return res.status(400).json({
-//         message: "sensor value is required",
-//       });
-//     }
-
-//     // แปลงค่า sensor → boolean
-//     const sensorValue = sensor === true || sensor === 1 || sensor === "1";
-
-//     const status = sensorValue ? "Open" : "Close";
-
-//     const inn = await Inn.findByIdAndUpdate(
-//       innId,
-//       {
-//         arduinoSensor: sensorValue,
-//         status,
-//       },
-//       { new: true }
-//     );
-
-//     if (!inn) {
-//       return res.status(404).json({ message: "Inn not found" });
-//     }
-
-//     res.json({
-//       message: "Sensor data updated",
-//       data: {
-//         innId: inn._id,
-//         arduinoSensor: inn.arduinoSensor,
-//         status: inn.status,
-//       },
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// });
-
-router.patch("/:canteenId/inns/:innId/sensor",
-  async (req, res) => {
-    try {
-      const { canteenId, innId } = req.params;
-      const { arduinoSensor } = req.body;
-
-      const result = await Canteen.findOneAndUpdate(
-        {
-          _id: canteenId,
-          "inns._id": innId
-        },
-        {
-          $set: { "inns.$.arduinoSensor": arduinoSensor }
-        },
-        { new: true }
-      );
-
-      if (!result) {
-        return res.status(404).json({
-          message: "Canteen or Inn not found"
-        });
-      }
-
-      res.json({
-        message: "Sensor updated",
-        arduinoSensor
+    if (!arduinoSensor) {
+      return res.status(400).json({
+        message: "arduinoSensor is required",
       });
-
-    } catch (err) {
-      res.status(500).json({ error: err.message });
     }
+
+    const inn = await Inn.findOneAndUpdate(
+      {
+        _id: innId,
+        canteenID: canteenId, // ป้องกันแก้ข้ามโรงอาหาร
+      },
+      {
+        arduinoSensor,
+      },
+      { new: true, runValidators: true }
+    );
+
+    if (!inn) {
+      return res.status(404).json({
+        message: "Inn not found in this canteen",
+      });
+    }
+
+    res.json({
+      message: "Sensor updated successfully",
+      data: inn,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
-);
+});
+
+
 
 module.exports = router;
