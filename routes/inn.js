@@ -100,20 +100,19 @@ router.patch("/:canteenId/inns/:innId/sensor", async (req, res) => {
     const { canteenId, innId } = req.params;
     const { arduinoSensor } = req.body;
 
-    if (!arduinoSensor) {
+    // ✅ รับได้ทั้ง true และ false
+    if (typeof arduinoSensor !== "boolean") {
       return res.status(400).json({
-        message: "arduinoSensor is required",
+        message: "arduinoSensor must be boolean",
       });
     }
 
     const inn = await Inn.findOneAndUpdate(
       {
         _id: innId,
-        canteenID: canteenId, // ป้องกันแก้ข้ามโรงอาหาร
+        canteenID: canteenId,
       },
-      {
-        arduinoSensor,
-      },
+      { arduinoSensor },
       { new: true, runValidators: true }
     );
 
@@ -131,6 +130,7 @@ router.patch("/:canteenId/inns/:innId/sensor", async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
 
 
 
