@@ -137,7 +137,7 @@ router.patch("/:id/clear", async (req, res) => {
 //   }
 // });
 
-router.put("/:canteenId/inns/:innId/sensor",
+router.patch("/:canteenId/inns/:innId/sensor",
   async (req, res) => {
     try {
       const { canteenId, innId } = req.params;
