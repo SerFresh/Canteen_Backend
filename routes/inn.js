@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const Canteen = require("../models/Canteen");
 const Inn = require("../models/Inn");
+const Menu = require("../models/Menu");
 
 // ➕ เพิ่ม Inn ในโรงอาหาร
 router.post("/:canteenId/inns", async (req, res) => {
@@ -96,7 +97,7 @@ router.patch("/:canteenId/inns/:innId/clear", async (req, res) => {
 });
 
 //เรียกข้อมูลร้าน
-router.get("/inns/:innId", async (req, res) => {
+router.get("/:innId", async (req, res) => {
   try {
     const { innId } = req.params;
 
