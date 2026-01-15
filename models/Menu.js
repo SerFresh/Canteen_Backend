@@ -16,7 +16,6 @@ const MenuSchema = new mongoose.Schema(
     price: {
       type: String,
       required: true,
-      min: 0,
     },
     like: {
       type: Boolean,
