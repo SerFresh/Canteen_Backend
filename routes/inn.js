@@ -46,12 +46,13 @@ router.post("/:canteenId/inns", async (req, res) => {
 });
 
 // ✏️ แก้ไข name และ type
-router.put("/:id", async (req, res) => {
+router.patch("/:canteenId/inns/:innId", async (req, res) => {
   try {
+    const { canteenId, innId } = req.params;
     const { name, type } = req.body;
 
-    const inn = await Inn.findByIdAndUpdate(
-      req.params.id,
+    const inn = await Inn.findOneAndUpdate(
+      { _id: innId, canteenID: canteenId },
       { name, type },
       { new: true, runValidators: true }
     );
@@ -60,24 +61,22 @@ router.put("/:id", async (req, res) => {
       return res.status(404).json({ message: "Inn not found" });
     }
 
-    res.json({
-      message: "Inn updated successfully",
-      data: inn,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.json({ message: "Inn updated", data: inn });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
+
+
 // 🧹 ลบ name + type (set null)
-router.patch("/:id/clear", async (req, res) => {
+router.patch("/:canteenId/inns/:innId/clear", async (req, res) => {
   try {
-    const inn = await Inn.findByIdAndUpdate(
-      req.params.id,
-      {
-        name: "none",
-        type: "none",
-      },
+    const { canteenId, innId } = req.params;
+
+    const inn = await Inn.findOneAndUpdate(
+      { _id: innId, canteenID: canteenId },
+      { name: "none", type: "none" },
       { new: true }
     );
 
@@ -85,14 +84,18 @@ router.patch("/:id/clear", async (req, res) => {
       return res.status(404).json({ message: "Inn not found" });
     }
 
+    await Menu.deleteMany({ innID: innId });
+
     res.json({
-      message: "Inn name and type cleared",
+      message: "Inn cleared and menus deleted",
       data: inn,
     });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
+
+
 
 // 📡 รับค่าจาก Arduino Sensor
 router.patch("/:canteenId/inns/:innId/sensor", async (req, res) => {

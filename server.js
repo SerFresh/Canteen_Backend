@@ -8,6 +8,7 @@ const canteenRoutes = require("./routes/canteen");
 const reservationRoutes = require("./routes/reservation");
 const tablesRoutes = require("./routes/table");
 const innsRoutes = require("./routes/inn");
+const menuRoutes = require("./routes/menu");
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use("/api/canteen", canteenRoutes);
 app.use("/api/reservation", reservationRoutes);
 app.use("/api/tables", tablesRoutes);
 app.use("/api/inns", innsRoutes);
+app.use("/api/menus", menuRoutes);
 
 // Start server (Render ต้องการตรงนี้)
 const PORT = process.env.PORT || 5000;
