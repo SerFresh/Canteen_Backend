@@ -95,6 +95,33 @@ router.patch("/:canteenId/inns/:innId/clear", async (req, res) => {
   }
 });
 
+//เรียกข้อมูลร้าน
+router.get("/inns/:innId", async (req, res) => {
+  try {
+    const { innId } = req.params;
+
+    // 1. ร้าน
+    const inn = await Inn.findById(innId).select(
+      "innNumber name type arduinoSensor"
+    );
+
+    if (!inn) {
+      return res.status(404).json({ message: "Inn not found" });
+    }
+
+    // 2. เมนูของร้าน
+    const menus = await Menu.find({ innID: innId }).select(
+      "name price like"
+    );
+
+    res.json({
+      ...inn.toObject(),
+      menus,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 // 📡 รับค่าจาก Arduino Sensor
