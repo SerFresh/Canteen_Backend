@@ -8,14 +8,24 @@ const router = express.Router();
 router.post("/:tableId", isAuthenticated, async (req, res) => {
   try {
     const { duration_minutes } = req.body;
-    const userID = req.user._id;
+    const userID = req.user?._id;
     const tableID = req.params.tableId;
 
-    if (!userID) return res.status(500).json({ message: "userID missing" });
+    if (!userID) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
-    const table = await Table.findById(tableID);
-    if (!table) return res.status(404).json({ message: "Table not found" });
-    if (table.status !== "Available") {
+    if (!duration_minutes || duration_minutes <= 0) {
+      return res.status(400).json({ message: "Invalid duration" });
+    }
+
+    const table = await Table.findOneAndUpdate(
+      { _id: tableID, status: "Available" },
+      { status: "Reserved", arduinoSensor: true },
+      { new: true }
+    );
+
+    if (!table) {
       return res.status(400).json({ message: "Table not available" });
     }
 
@@ -23,14 +33,14 @@ router.post("/:tableId", isAuthenticated, async (req, res) => {
       tableID,
       userID,
       duration_minutes,
-      reserved_at: new Date()
+      reserved_at: new Date(),
+      status: "pending"
     });
 
-    table.status = "Reserved";
-    table.arduinoSensor = true;
-    await table.save();
-
-    res.status(201).json({ message: "Reservation created", reservation });
+    res.status(201).json({
+      message: "Reservation created",
+      reservation,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -108,6 +118,9 @@ router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
 router.put("/:reservationId/cancel", isAuthenticated, async (req, res) => {
   try {
     const reservation = await Reservation.findById(req.params.reservationId);
+    if (!reservation.userID.equals(req.user._id)) {
+      return res.status(403).json({ message: "Not your reservation" });
+    }
     if (!reservation) return res.status(404).json({ message: "Reservation not found" });
     if (reservation.status !== "pending") return res.status(400).json({ message: "Cannot cancel" });
 

@@ -70,7 +70,7 @@ router.patch("/:canteenId/inns/:innId", async (req, res) => {
 
 
 
-// 🧹 ลบ name + type (set null)
+// 🧹 ลบ name + type
 router.patch("/:canteenId/inns/:innId/clear", async (req, res) => {
   try {
     const { canteenId, innId } = req.params;
