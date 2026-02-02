@@ -118,7 +118,7 @@ router.get("/:innId", async (req, res) => {
 
     // 2. เมนูของร้าน
     const menus = await Menu.find({ innID: innId }).select(
-      "name price like"
+      "name price image like"
     );
 
     res.json({
