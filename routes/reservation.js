@@ -15,10 +15,23 @@ router.post("/:tableId", isAuthenticated, async (req, res) => {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    if (!duration_minutes || duration_minutes <= 0) {
+    if (![5, 10, 15].includes(duration_minutes)) {
       return res.status(400).json({ message: "Invalid duration" });
     }
 
+    // 🔍 เช็คเชิง logic (UX)
+    const existingReservation = await Reservation.findOne({
+      userID,
+      status: { $in: ["pending"] },
+    });
+
+    if (existingReservation) {
+      return res.status(400).json({
+        message: "You already have an active reservation",
+      });
+    }
+
+    // 🔒 ล็อกโต๊ะ
     const table = await Table.findOneAndUpdate(
       { _id: tableID, status: "Available" },
       { status: "Reserved", arduinoSensor: true },
@@ -29,22 +42,30 @@ router.post("/:tableId", isAuthenticated, async (req, res) => {
       return res.status(400).json({ message: "Table not available" });
     }
 
+    // 📝 CREATE (จุดที่อาจโดน 11000)
     const reservation = await Reservation.create({
       tableID,
       userID,
       duration_minutes,
-      reserved_at: new Date(),
-      status: "pending"
+      status: "pending",
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Reservation created",
       reservation,
     });
   } catch (err) {
+    // 👇 ใส่ตรงนี้
+    if (err.code === 11000) {
+      return res.status(400).json({
+        message: "You already have an active reservation",
+      });
+    }
+
     res.status(500).json({ error: err.message });
   }
 });
+
 
 /* ---------- CHECK-IN ---------- */
 router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
@@ -118,6 +139,9 @@ router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
 router.put("/:reservationId/cancel", isAuthenticated, async (req, res) => {
   try {
     const reservation = await Reservation.findById(req.params.reservationId);
+    if (!reservation) {
+      return res.status(404).json({ message: "Reservation not found" });
+    }
     if (!reservation.userID.equals(req.user._id)) {
       return res.status(403).json({ message: "Not your reservation" });
     }
