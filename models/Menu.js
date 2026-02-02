@@ -17,6 +17,14 @@ const MenuSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    image: {
+      type: String,
+      default: null,
+    },
+    imagePublicId: { //public_id เอาไว้ลบ
+      type: String,
+      default: null,
+    },
     like: {
       type: Boolean,
       default: false,
@@ -26,4 +34,3 @@ const MenuSchema = new mongoose.Schema(
 );
 
 module.exports = mongoose.model("Menu", MenuSchema);
-

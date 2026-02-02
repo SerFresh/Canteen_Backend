@@ -22,6 +22,11 @@ const InnSchema = new mongoose.Schema(
       enum: ["food", "drink", "storage", "none"],
       default: "none",
     },
+    queueCount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
     arduinoSensor: {
       type: Boolean,
       default: false,
@@ -34,4 +39,5 @@ const InnSchema = new mongoose.Schema(
 InnSchema.index({ canteenID: 1, innNumber: 1 }, { unique: true });
 
 module.exports = mongoose.model("Inn", InnSchema);
+
 

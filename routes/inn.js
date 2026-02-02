@@ -162,6 +162,61 @@ router.patch("/:canteenId/inns/:innId/sensor", async (req, res) => {
   }
 });
 
+// ➕ เพิ่มจำนวนคิว
+router.patch("/:canteenId/inns/:innId/queue/increase", async (req, res) => {
+  try {
+    const { canteenId, innId } = req.params;
+
+    const inn = await Inn.findOneAndUpdate(
+      { _id: innId, canteenID: canteenId },
+      { $inc: { queueCount: 1 } },
+      { new: true }
+    );
+
+    if (!inn) {
+      return res.status(404).json({ message: "Inn not found" });
+    }
+
+    res.json({
+      message: "Queue increased",
+      queueCount: inn.queueCount,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ➖ ลดจำนวนคิว
+router.patch("/:canteenId/inns/:innId/queue/decrease", async (req, res) => {
+  try {
+    const { canteenId, innId } = req.params;
+
+    const inn = await Inn.findOne({
+      _id: innId,
+      canteenID: canteenId,
+    });
+
+    if (!inn) {
+      return res.status(404).json({ message: "Inn not found" });
+    }
+
+    if (inn.queueCount <= 0) {
+      return res.status(400).json({
+        message: "Queue count cannot be less than 0",
+      });
+    }
+
+    inn.queueCount -= 1;
+    await inn.save();
+
+    res.json({
+      message: "Queue decreased",
+      queueCount: inn.queueCount,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 
