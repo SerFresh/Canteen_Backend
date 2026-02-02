@@ -97,80 +97,77 @@ Scan QR ของโต๊ะ → check-in
 */
 router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
   const { tableId } = req.params;
-  const userId = req.user.id;
+  const userId = req.user._id;
 
   try {
-    // หาโต๊ะจาก tableId หรือ qr_code_token
+    // 1️⃣ หาโต๊ะ (จาก id หรือ qr token)
     const table = await Table.findOne({
       $or: [{ _id: tableId }, { qr_code_token: tableId }],
     });
-    if (!table) return res.status(404).json({ message: "Table not found" });
 
-    // --- เพิ่ม logic สำหรับโต๊ะ Available/Unavailable ---
-    if (table.status === "Available" || table.status === "Unavailable") {
-      table.status = "Unavailable";
-      table.arduinoSensor = true; // เปิดใช้งาน sensor
-      await table.save();
-
-      // ตั้งเวลา 30 นาทีให้ arduinoSensor = false
-      setTimeout(async () => {
-        try {
-          const t = await Table.findById(table._id);
-          if (t) {
-            t.arduinoSensor = false;
-            await t.save();
-          }
-        } catch (err) {
-          console.error("Failed to reset arduinoSensor:", err);
-        }
-      }, 5 * 60 * 1000); // 30 นาที
-
-      return res.json({
-        message: "Table is now marked as unavailable until cancelled",
-        tableId: table._id,
-      });
+    if (!table) {
+      return res.status(404).json({ message: "Table not found" });
     }
 
-    // หา reservation ของ user ปัจจุบัน
-    let reservation = await Reservation.findOne({
+    // 2️⃣ หา reservation ที่ยัง pending ของ user นี้
+    const reservation = await Reservation.findOne({
       tableID: table._id,
       userID: userId,
-      status: { $in: ["pending", "confirmed"] },
+      status: "pending",
     });
 
-    // ถ้าไม่มี reservation → สร้างชั่วคราว
     if (!reservation) {
-      reservation = new Reservation({
-        tableID: table._id,
-        userID: userId,
-        status: "confirmed",
-        reserved_at: new Date(),
-        duration_minutes: ALLOWED_DURATIONS.includes(DEFAULT_DURATION)
-          ? DEFAULT_DURATION
-          : ALLOWED_DURATIONS[0],
+      return res.status(400).json({
+        message: "No pending reservation found for this table",
       });
-      await reservation.save();
-    } else {
-      // ถ้ามี reservation → อัปเดตเป็น confirmed
-      reservation.status = "confirmed";
-      await reservation.save();
     }
 
-    // อัปเดตโต๊ะ
+    // 3️⃣ เช็คอิน → อัปเดต reservation
+    reservation.status = "confirmed";
+    reservation.checkin_at = new Date();
+    await reservation.save();
+
+    // 4️⃣ อัปเดตโต๊ะ
     table.status = "Unavailable";
-    table.arduinoSensor = false;
+    table.arduinoSensor = true;
     await table.save();
 
-    res.json({
+    // 5️⃣ ตั้งเวลา expire อัตโนมัติ (ตาม duration)
+    setTimeout(async () => {
+      try {
+        const r = await Reservation.findById(reservation._id);
+        const t = await Table.findById(table._id);
+
+        if (r && r.status === "confirmed") {
+          r.status = "expired";
+          await r.save();
+        }
+
+        if (t) {
+          t.status = "Available";
+          t.arduinoSensor = false;
+          await t.save();
+        }
+      } catch (err) {
+        console.error("Auto-expire failed:", err);
+      }
+    }, reservation.duration_minutes * 60 * 1000);
+
+    return res.json({
       message: "เช็คอินสำเร็จ",
       reservationId: reservation._id,
       tableId: table._id,
+      expiredInMinutes: reservation.duration_minutes,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Server error", error: err.message });
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 });
+
 
 
 module.exports = router;
