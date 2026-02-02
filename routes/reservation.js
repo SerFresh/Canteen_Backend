@@ -68,48 +68,48 @@ router.post("/:tableId", isAuthenticated, async (req, res) => {
 
 
 /* ---------- CHECK-IN ---------- */
-// router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
-//   try {
-//     const table = await Table.findById(req.params.tableId);
-//     if (!table) return res.status(404).json({ message: "Table not found" });
+router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
+  try {
+    const table = await Table.findById(req.params.tableId);
+    if (!table) return res.status(404).json({ message: "Table not found" });
 
-//     // หา reservation ของผู้ใช้สำหรับโต๊ะนี้ ที่ยัง pending
-//     const reservation = await Reservation.findOne({
-//       tableID: table._id,
-//       userID: req.user._id,
-//       status: "pending"
-//     });
+    // // หา reservation ของผู้ใช้สำหรับโต๊ะนี้ ที่ยัง pending
+    // const reservation = await Reservation.findOne({
+    //   tableID: table._id,
+    //   userID: req.user._id,
+    //   status: "pending"
+    // });
 
-//     // โต๊ะ Reserved → ให้ผู้จอง check-in ได้
-//     if (table.status === "Reserved") {
-//       if (!reservation) {
-//         return res.status(403).json({ message: "You do not have a reservation for this table" });
-//       }
+    // // โต๊ะ Reserved → ให้ผู้จอง check-in ได้
+    // if (table.status === "Reserved") {
+    //   if (!reservation) {
+    //     return res.status(403).json({ message: "You do not have a reservation for this table" });
+    //   }
 
-//       reservation.status = "confirmed";
-//       reservation.checkin_at = new Date();
-//       await reservation.save();
+    //   reservation.status = "confirmed";
+    //   reservation.checkin_at = new Date();
+    //   await reservation.save();
 
-//       table.status = "Unavailable";
-//       table.arduinoSensor = false; // เปิดเซนเซอร์
-//       await table.save();
+    //   table.status = "Unavailable";
+    //   table.arduinoSensor = false; // เปิดเซนเซอร์
+    //   await table.save();
 
-//       return res.json({ message: "Check-in confirmed", reservation });
-//     }
+    //   return res.json({ message: "Check-in confirmed", reservation });
+    // }
 
-//     // โต๊ะ Available หรือ Unavailable → เปลี่ยนเป็น Unavailable
-//     if (table.status === "Available" || table.status === "Unavailable") {
-//       table.status = "Unavailable";
-//       table.arduinoSensor = true; // เซนเซอร์ยังไม่ทำงาน
-//       await table.save();
-//       return res.json({ message: "Table is now marked as unavailable until cancelled" });
-//     }
+    // โต๊ะ Available หรือ Unavailable → เปลี่ยนเป็น Unavailable
+    if (table.status === "Available" || table.status === "Unavailable") {
+      table.status = "Unavailable";
+      table.arduinoSensor = true; // เซนเซอร์ยังไม่ทำงาน
+      await table.save();
+      return res.json({ message: "Table is now marked as unavailable until cancelled" });
+    }
 
-//     res.status(400).json({ message: "Cannot check-in" });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
+    res.status(400).json({ message: "Cannot check-in" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
   try {
