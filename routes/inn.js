@@ -70,14 +70,18 @@ router.patch("/:canteenId/inns/:innId", async (req, res) => {
 
 
 
-// 🧹 ลบ name + type
+// 🧹 ลบ name + type + reset queue
 router.patch("/:canteenId/inns/:innId/clear", async (req, res) => {
   try {
     const { canteenId, innId } = req.params;
 
     const inn = await Inn.findOneAndUpdate(
       { _id: innId, canteenID: canteenId },
-      { name: "none", type: "none" },
+      {
+        name: "none",
+        type: "none",
+        queueCount: 0, // 👈 reset queue
+      },
       { new: true }
     );
 
@@ -85,16 +89,18 @@ router.patch("/:canteenId/inns/:innId/clear", async (req, res) => {
       return res.status(404).json({ message: "Inn not found" });
     }
 
+    // ลบเมนูทั้งหมดของร้าน
     await Menu.deleteMany({ innID: innId });
 
     res.json({
-      message: "Inn cleared and menus deleted",
+      message: "Inn cleared, menus deleted, queue reset",
       data: inn,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 //เรียกข้อมูลร้าน
 router.get("/:innId", async (req, res) => {
@@ -103,7 +109,7 @@ router.get("/:innId", async (req, res) => {
 
     // 1. ร้าน
     const inn = await Inn.findById(innId).select(
-      "innNumber name type arduinoSensor"
+      "innNumber name type queueCount arduinoSensor"
     );
 
     if (!inn) {
