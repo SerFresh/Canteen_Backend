@@ -135,7 +135,7 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
     let reservation = await Reservation.findOne({
       tableID: table._id,
       userID: userId,
-      status: { $in: ["Reserved", "confirmed"] },
+      status: { $in: ["pending", "confirmed"] },
     });
 
     // ถ้าไม่มี reservation → สร้างชั่วคราว
