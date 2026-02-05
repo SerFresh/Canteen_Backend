@@ -69,16 +69,13 @@ router.post("/:tableId", isAuthenticated, async (req, res) => {
 
 /* ---------- mark โต๊ะ ---------- */
 router.put("/:tableId/mark", isAuthenticated, async (req, res) => {
+  const { tableId } = req.params;
   
-  try {
-    const { tableId } = req.params;
-
-    const table = await Table.findOne({
-      $or: [
-        { _id: tableId },
-        { qr_code_token: tableId }
-      ],
-    });
+    try {
+      // 1️⃣ หาโต๊ะ (จาก id หรือ qr token)
+      const table = await Table.findOne({
+        $or: [{ _id: tableId }, { qr_code_token: tableId }],
+      });
 
     if (!table) {
       return res.status(404).json({ message: "Table not found" });
@@ -107,15 +104,13 @@ router.put("/:tableId/mark", isAuthenticated, async (req, res) => {
 
 
 router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
-  try {
     const { tableId } = req.params;
-
-    const table = await Table.findOne({
-      $or: [
-        { _id: tableId },
-        { qr_code_token: tableId }
-      ],
-    });
+  
+    try {
+      // 1️⃣ หาโต๊ะ (จาก id หรือ qr token)
+      const table = await Table.findOne({
+        $or: [{ _id: tableId }, { qr_code_token: tableId }],
+      });
 
     if (!table) {
       return res.status(404).json({ message: "Table not found" });
