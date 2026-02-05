@@ -70,7 +70,10 @@ router.post("/:tableId", isAuthenticated, async (req, res) => {
 /* ---------- mark โต๊ะ ---------- */
 router.put("/:tableId/mark", isAuthenticated, async (req, res) => {
   try {
-    const table = await Table.findById(req.params.tableId);
+    const table = await Table.findOne({
+      qr_code_token: req.params.tableId,
+    });
+
     if (!table) {
       return res.status(404).json({ message: "Table not found" });
     }
@@ -99,7 +102,10 @@ router.put("/:tableId/mark", isAuthenticated, async (req, res) => {
 
 router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
   try {
-    const table = await Table.findById(req.params.tableId);
+    const table = await Table.findOne({
+      qr_code_token: req.params.tableId,
+    });
+
     if (!table) {
       return res.status(404).json({ message: "Table not found" });
     }
