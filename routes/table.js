@@ -102,7 +102,7 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
   try {
     // 1️⃣ หาโต๊ะ (จาก id หรือ qr token)
     const table = await Table.findOne({
-      qr_code_token: tableId,
+      $or: [{ _id: tableId }, { qr_code_token: tableId }],
     });
 
     if (!table) {
