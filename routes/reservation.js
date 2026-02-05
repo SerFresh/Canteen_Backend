@@ -70,12 +70,19 @@ router.post("/:tableId", isAuthenticated, async (req, res) => {
 /* ---------- mark โต๊ะ ---------- */
 router.put("/:tableId/mark", isAuthenticated, async (req, res) => {
   const { tableId } = req.params;
-  
-    try {
-      // 1️⃣ หาโต๊ะ (จาก id หรือ qr token)
-      const table = await Table.findOne({
-        $or: [{ _id: tableId }, { qr_code_token: tableId }],
-      });
+
+  try {
+    let query;
+
+    // ✔ ถ้าเป็น ObjectId → หา _id
+    if (mongoose.Types.ObjectId.isValid(tableId)) {
+      query = { _id: tableId };
+    } else {
+      // ✔ ถ้าไม่ใช่ → หา qr token
+      query = { qr_code_token: tableId };
+    }
+
+    const table = await Table.findOne(query);
 
     if (!table) {
       return res.status(404).json({ message: "Table not found" });
@@ -97,6 +104,7 @@ router.put("/:tableId/mark", isAuthenticated, async (req, res) => {
       message: "Table blocked successfully",
       table,
     });
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -104,13 +112,19 @@ router.put("/:tableId/mark", isAuthenticated, async (req, res) => {
 
 
 router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
-    const { tableId } = req.params;
-  
-    try {
-      // 1️⃣ หาโต๊ะ (จาก id หรือ qr token)
-      const table = await Table.findOne({
-        $or: [{ _id: tableId }, { qr_code_token: tableId }],
-      });
+  const { tableId } = req.params;
+
+  try {
+    let query;
+
+    // ✔ เช็คก่อนว่าเป็น ObjectId หรือ QR token
+    if (mongoose.Types.ObjectId.isValid(tableId)) {
+      query = { _id: tableId };
+    } else {
+      query = { qr_code_token: tableId.trim() };
+    }
+
+    const table = await Table.findOne(query);
 
     if (!table) {
       return res.status(404).json({ message: "Table not found" });
@@ -122,7 +136,7 @@ router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
       });
     }
 
-    // 🔐 เช็คว่าเป็นคน block หรือไม่
+    // 🔐 เช็คว่า user เป็นคน block หรือไม่
     if (
       !table.blockedBy ||
       table.blockedBy.toString() !== req.user._id.toString()
@@ -132,6 +146,8 @@ router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
       });
     }
 
+    // ✔ ปลด block
+    table.status = "Available";
     table.arduinoSensor = false;
     table.blockedBy = null;
 
@@ -141,7 +157,9 @@ router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
       message: "Table unblocked successfully",
       table,
     });
+
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
