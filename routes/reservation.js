@@ -67,69 +67,68 @@ router.post("/:tableId", isAuthenticated, async (req, res) => {
 });
 
 
-/* ---------- CHECK-IN ---------- */
-router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
+/* ---------- mark โต๊ะ ---------- */
+router.put("/:tableId/mark", isAuthenticated, async (req, res) => {
   try {
     const table = await Table.findById(req.params.tableId);
-    if (!table) return res.status(404).json({ message: "Table not found" });
-
-    // // หา reservation ของผู้ใช้สำหรับโต๊ะนี้ ที่ยัง pending
-    // const reservation = await Reservation.findOne({
-    //   tableID: table._id,
-    //   userID: req.user._id,
-    //   status: "pending"
-    // });
-
-    // // โต๊ะ Reserved → ให้ผู้จอง check-in ได้
-    // if (table.status === "Reserved") {
-    //   if (!reservation) {
-    //     return res.status(403).json({ message: "You do not have a reservation for this table" });
-    //   }
-
-    //   reservation.status = "confirmed";
-    //   reservation.checkin_at = new Date();
-    //   await reservation.save();
-
-    //   table.status = "Unavailable";
-    //   table.arduinoSensor = false; // เปิดเซนเซอร์
-    //   await table.save();
-
-    //   return res.json({ message: "Check-in confirmed", reservation });
-    // }
-
-    // โต๊ะ Available หรือ Unavailable → เปลี่ยนเป็น Unavailable
-    if (table.status === "Available" || table.status === "Unavailable") {
-      table.status = "Unavailable";
-      table.arduinoSensor = true; // เซนเซอร์ยังไม่ทำงาน
-      await table.save();
-      return res.json({ message: "Table is now marked as unavailable until cancelled" });
+    if (!table) {
+      return res.status(404).json({ message: "Table not found" });
     }
 
-    res.status(400).json({ message: "Cannot check-in" });
+    if (table.status === "Reserved") {
+      return res.status(400).json({
+        message: "Table already reserved",
+      });
+    }
+
+    table.status = "Unavailable";
+    table.arduinoSensor = true;
+    table.blockedBy = req.user._id;
+
+    await table.save();
+
+    res.json({
+      message: "Table blocked successfully",
+      table,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+
 router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
   try {
     const table = await Table.findById(req.params.tableId);
-    if (!table) return res.status(404).json({ message: "Table not found" });
-
-    // เปิดโต๊ะกลับเป็น Available เฉพาะกรณีที่โต๊ะถูกบล็อก
-    if (table.status === "Unavailable") {
-      table.status = "Available";
-      table.arduinoSensor = false; // เปิดเซนเซอร์ด้วย
-      await table.save();
-
-      // ส่งคำสั่งไปเซนเซอร์จริง เช่น MQTT, API, GPIO
-      // sendToSensor(table.id, "activate");
-
-      return res.json({ message: "Table is now available and sensor activated", table });
+    if (!table) {
+      return res.status(404).json({ message: "Table not found" });
     }
 
-    // ถ้าโต๊ะไม่ใช่ Unavailable → ไม่มีอะไรต้องทำ
-    res.status(400).json({ message: "Table is not blocked" });
+    if (table.status !== "Unavailable") {
+      return res.status(400).json({
+        message: "Table is not blocked",
+      });
+    }
+
+    // 🔐 เช็คว่าเป็นคน block หรือไม่
+    if (
+      !table.blockedBy ||
+      table.blockedBy.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        message: "You cannot unblock this table",
+      });
+    }
+
+    table.arduinoSensor = false;
+    table.blockedBy = null;
+
+    await table.save();
+
+    res.json({
+      message: "Table unblocked successfully",
+      table,
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
