@@ -72,26 +72,16 @@ router.put("/:tableId/mark", isAuthenticated, async (req, res) => {
   const { tableId } = req.params;
 
   try {
-    let query;
-
-    // ✔ ถ้าเป็น ObjectId → หา _id
-    if (mongoose.Types.ObjectId.isValid(tableId)) {
-      query = { _id: tableId };
-    } else {
-      // ✔ ถ้าไม่ใช่ → หา qr token
-      query = { qr_code_token: tableId };
-    }
-
-    const table = await Table.findOne(query);
+    const table = await Table.findOne({
+      qr_code_token: tableId.trim(),
+    });
 
     if (!table) {
       return res.status(404).json({ message: "Table not found" });
     }
 
     if (table.status === "Reserved") {
-      return res.status(400).json({
-        message: "Table already reserved",
-      });
+      return res.status(400).json({ message: "Table already reserved" });
     }
 
     table.status = "Unavailable";
@@ -100,66 +90,40 @@ router.put("/:tableId/mark", isAuthenticated, async (req, res) => {
 
     await table.save();
 
-    res.json({
-      message: "Table blocked successfully",
-      table,
-    });
-
+    res.json({ message: "Table blocked successfully", table });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-
 router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
   const { tableId } = req.params;
-
+  
   try {
-    let query;
-
-    // ✔ เช็คก่อนว่าเป็น ObjectId หรือ QR token
-    if (mongoose.Types.ObjectId.isValid(tableId)) {
-      query = { _id: tableId };
-    } else {
-      query = { qr_code_token: tableId.trim() };
-    }
-
-    const table = await Table.findOne(query);
+    const table = await Table.findOne({
+      qr_code_token: tableId.trim(),
+    });
 
     if (!table) {
       return res.status(404).json({ message: "Table not found" });
     }
 
     if (table.status !== "Unavailable") {
-      return res.status(400).json({
-        message: "Table is not blocked",
-      });
+      return res.status(400).json({ message: "Table is not blocked" });
     }
 
-    // 🔐 เช็คว่า user เป็นคน block หรือไม่
-    if (
-      !table.blockedBy ||
-      table.blockedBy.toString() !== req.user._id.toString()
-    ) {
-      return res.status(403).json({
-        message: "You cannot unblock this table",
-      });
+    if (!table.blockedBy || table.blockedBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "You cannot unblock this table" });
     }
 
-    // ✔ ปลด block
     table.status = "Available";
     table.arduinoSensor = false;
     table.blockedBy = null;
 
     await table.save();
 
-    res.json({
-      message: "Table unblocked successfully",
-      table,
-    });
-
+    res.json({ message: "Table unblocked successfully", table });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ error: err.message });
   }
 });
