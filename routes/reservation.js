@@ -69,9 +69,15 @@ router.post("/:tableId", isAuthenticated, async (req, res) => {
 
 /* ---------- mark โต๊ะ ---------- */
 router.put("/:tableId/mark", isAuthenticated, async (req, res) => {
+  
   try {
+    const { tableId } = req.params;
+
     const table = await Table.findOne({
-      qr_code_token: req.params.tableId,
+      $or: [
+        { _id: tableId },
+        { qr_code_token: tableId }
+      ],
     });
 
     if (!table) {
@@ -102,8 +108,13 @@ router.put("/:tableId/mark", isAuthenticated, async (req, res) => {
 
 router.put("/:tableId/activate", isAuthenticated, async (req, res) => {
   try {
+    const { tableId } = req.params;
+
     const table = await Table.findOne({
-      qr_code_token: req.params.tableId,
+      $or: [
+        { _id: tableId },
+        { qr_code_token: tableId }
+      ],
     });
 
     if (!table) {
