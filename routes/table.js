@@ -100,21 +100,16 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
   const userId = req.user._id;
 
   try {
-    let table;
-
-    // หาโต๊ะจาก qr token หรือ id
-    if (mongoose.Types.ObjectId.isValid(tableId)) {
-      table = await Table.findById(tableId);
-    }
-
-    if (!table) {
-      table = await Table.findOne({ qr_code_token: tableId });
-    }
+    // 1️⃣ หาโต๊ะ (จาก id หรือ qr token)
+    const table = await Table.findOne({
+      qr_code_token: tableId,
+    });
 
     if (!table) {
       return res.status(404).json({ message: "Table not found" });
     }
 
+    // 2️⃣ หา reservation ที่ยัง pending ของ user นี้
     const reservation = await Reservation.findOne({
       tableID: table._id,
       userID: userId,
@@ -123,31 +118,55 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
 
     if (!reservation) {
       return res.status(400).json({
-        message: "No pending reservation found",
+        message: "No pending reservation found for this table",
       });
     }
 
-    // confirm reservation
+    // 3️⃣ เช็คอิน → อัปเดต reservation
     reservation.status = "confirmed";
     reservation.checkin_at = new Date();
     await reservation.save();
 
-    // update table (atomic)
-    await Table.findByIdAndUpdate(table._id, {
-      status: "Unavailable",
-      arduinoSensor: false,
-    });
+    // 4️⃣ อัปเดตโต๊ะ
+    table.status = "Unavailable";
+    table.arduinoSensor = false;
+    await table.save();
 
-    res.json({
+    // 5️⃣ ตั้งเวลา expire อัตโนมัติ (ตาม duration)
+    setTimeout(async () => {
+      try {
+        const r = await Reservation.findById(reservation._id);
+        const t = await Table.findById(table._id);
+
+        if (r && r.status === "confirmed") {
+          r.status = "expired";
+          await r.save();
+        }
+
+        if (t) {
+          t.status = "Available";
+          t.arduinoSensor = false;
+          await t.save();
+        }
+      } catch (err) {
+        console.error("Auto-expire failed:", err);
+      }
+    }, reservation.duration_minutes * 60 * 1000);
+
+    return res.json({
       message: "เช็คอินสำเร็จ",
+      reservationId: reservation._id,
+      tableId: table._id,
+      expiredInMinutes: reservation.duration_minutes,
     });
-
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      message: "Server error",
+      error: err.message,
+    });
   }
 });
-
 
 
 
