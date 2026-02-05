@@ -101,10 +101,14 @@ router.put("/:tableId/checkin", isAuthenticated, async (req, res) => {
 
   try {
     // 1️⃣ หาโต๊ะ (จาก id หรือ qr token)
-    const table = await Table.findOne({
-      $or: [{ _id: tableId }, { qr_code_token: tableId }],
-    });
+    let table;
 
+      if (mongoose.Types.ObjectId.isValid(tableId)) {
+        table = await Table.findById(tableId);
+      } else {
+        table = await Table.findOne({ qr_code_token: tableId });
+      }
+      
     if (!table) {
       return res.status(404).json({ message: "Table not found" });
     }
